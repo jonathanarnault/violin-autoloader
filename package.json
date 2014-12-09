@@ -1,8 +1,11 @@
 {
   "name": "violin-autoloader",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Autoloader for Node.js",
-  "url": "https://github.com/jonathanarnault/violin-autoloader.git",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jonathanarnault/violin-autoloader.git"
+  },
   "main": "index.js",
   "directories": {
     "test": "test"
