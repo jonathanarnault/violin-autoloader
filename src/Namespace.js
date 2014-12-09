@@ -139,7 +139,7 @@ Namespace.prototype.setDirectories = function (directories) {
 
 
 /**
- *
+ * Propagate directories updates to children
  * @public
  */
 Namespace.prototype.propagateDirectories = function () {
@@ -154,7 +154,7 @@ Namespace.prototype.propagateDirectories = function () {
 
 
 /**
- * 
+ * Calculate directories path from parent directories
  * @private 
  */
 Namespace.prototype.calculateDirectories = function () {
