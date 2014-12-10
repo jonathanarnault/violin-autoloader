@@ -19,7 +19,8 @@ var Namespace = require('./Namespace.js');
 var Autoloader = function () {
 
     this.frozen = false;
-    this.namespaces = {};
+    this.namespace = new Namespace('', []);
+    this.proxy = this.namespaceProxy(this.namespace);
 };
 
 Autoloader.prototype = {
@@ -32,11 +33,17 @@ Autoloader.prototype = {
     frozen: false,
 
     /**
-     * Registered namespaces
-     * @type {Object}
+     * Root namespace
+     * @type {Namespace}
      * @private
      */
-    namespaces: {}
+    namespace: null,
+
+    /**
+     * Root namespace proxy
+     * @type {Proxy}
+     */
+    proxy: null
 };
 
 
@@ -52,22 +59,16 @@ Autoloader.prototype.registerNamespace = function (namespace, directories) {
     }
 
     var ns = namespace.split('.'),
-        n,
-        ds = [];
+        n;
 
-    if (!this.namespaces[ns[0]]) {
-        if (ns.length === 1) {
-            ds = directories;
-        }
-        this.namespaces[ns[0]] = new Namespace(ns[0], ds);
-    } else if (ns.length === 1) {
-        this.namespaces[ns[0]].setDirectories(directories);
-        this.namespaces[ns[0]].propagateDirectories();
+    if (namespace === '') {
+        this.namespace.setDirectories(directories);
+        return;
     }
-    namespace = this.namespaces[ns[0]];
 
-    for (var i=1; i < ns.length; i++) {
-        if (!namespace.hasChild(ns[i])) {
+    namespace = this.namespace;
+    for (var i=0; i < ns.length; i++) {
+        if (undefined === (n = namespace.getChild(ns[i]))) {
             if (i === ns.length - 1) {
                 n = new Namespace(ns[i], directories, namespace);
             } else {
@@ -75,16 +76,13 @@ Autoloader.prototype.registerNamespace = function (namespace, directories) {
             }
             
         } else {
-            n = namespace.getChild(ns[i]);
-
             if (i === ns.length - 1) {
                 n.setDirectories(directories);
             }
         }
         namespace = n;
     }
-};
-
+}
 
 /**
  * Register autoloader
@@ -99,13 +97,7 @@ Autoloader.prototype.register = function (cb) {
     }
 
     global.__proto__ = this.createProxy(global, function (key) {
-        if (undefined !== autoloader.namespaces[key]) {
-            return autoloader.namespaceProxy(autoloader.namespaces[key]);
-        }
-
-        if (undefined !== autoloader.namespaces['']) {
-            return autoloader.namespaceProxy(autoloader.namespaces[''])[key];
-        }
+        return autoloader.proxy[key];
     });
 
     // Freeze Autoloader
@@ -155,7 +147,7 @@ Autoloader.prototype.createProxy = function (obj, callback) {
             return k;
         },
         get: function (r, key) {
-            if (key != 'v8debug' && target[key] == undefined) {
+            if (key != 'v8debug' && target[key] === undefined) {
                 return callback(key);
             }
             return target[key];
@@ -174,6 +166,7 @@ Autoloader.prototype.namespaceProxy = function (namespace) {
     var autoloader = this;
 
     return autoloader.createProxy(namespace, function (key) {
+
         if (undefined !== (c = namespace.getClass(key))) {
             return c;
         }
@@ -214,25 +207,13 @@ Autoloader.prototype.namespaceProxy = function (namespace) {
 
 
 /**
- * Get a registered namespace
+ * Get root namespace
  * @param  {String} name
  * @return {Namespace}
  * @public
  */
-Autoloader.prototype.getNamespace = function (name) {
-    return this.namespaces[name];
-};
-
-/**
- * Get registered namespaces
- * @return {Array}
- * @public
- */
-Autoloader.prototype.getNamespaces = function () {
-    var namespaces = this.namespaces;
-    return Object.keys(namespaces).map(function (key) {
-        return namespaces[key];
-    });
+Autoloader.prototype.getNamespace = function () {
+    return this.namespace;
 };
 
 module.exports = Autoloader;

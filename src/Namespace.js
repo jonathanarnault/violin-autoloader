@@ -136,6 +136,7 @@ Namespace.prototype.getDirectories = function () {
  */
 Namespace.prototype.setDirectories = function (directories) {
     this.directories = directories;
+    this.propagateDirectories();
 };
 
 
