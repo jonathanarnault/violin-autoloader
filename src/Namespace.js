@@ -112,7 +112,8 @@ Namespace.prototype.getName = function () {
 Namespace.prototype.getFullName = function () {
     var name = '';
     if (null !== this.parent) {
-        name = this.parent.getFullName() + '.';
+        name = this.parent.getFullName();
+        name += (name !== '') ? '.' : '';
     }
     return name + this.name;
 };

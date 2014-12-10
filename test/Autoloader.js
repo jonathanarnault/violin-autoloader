@@ -19,6 +19,7 @@ autoloader.registerNamespace('a.b.c', path.join(__dirname, 'namespaces', 'c'));
 autoloader.registerNamespace('a.b', path.join(__dirname, 'namespaces', 'b'));
 autoloader.registerNamespace('a', path.join(__dirname, 'namespaces', 'a'));
 autoloader.registerNamespace('d', path.join(__dirname, 'namespaces', 'd'));
+autoloader.registerNamespace('', path.join(__dirname, 'namespaces', 'default'));
 
 autoloader.register(function () {
 
@@ -42,7 +43,7 @@ autoloader.register(function () {
             });
 
             it('should return registered namespaces', function () {
-                autoloader.getNamespaces().length.should.be.exactly(2);
+                autoloader.getNamespaces().length.should.be.exactly(3);
             });
         });
 
@@ -86,6 +87,7 @@ autoloader.register(function () {
                     var E = new a.b.E(),
                         B = new a.b.c.d.B(),
                         F = new d.F();
+                        G = new e.G();
                 }).should.not.throw();
             });
 
@@ -95,7 +97,11 @@ autoloader.register(function () {
                 }).should.throw();
 
                 (function () {
-                    var E = new a.b.D();
+                    var D = new a.b.D();
+                }).should.throw();
+
+                (function () {
+                    var G = new k.G();
                 }).should.throw();
             });
         });

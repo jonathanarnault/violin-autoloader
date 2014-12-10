@@ -20,7 +20,6 @@ var Autoloader = function () {
 
     this.frozen = false;
     this.namespaces = {};
-    this.global = {};
 };
 
 Autoloader.prototype = {
@@ -37,13 +36,7 @@ Autoloader.prototype = {
      * @type {Object}
      * @private
      */
-    namespaces: {},
-
-    /**
-     * Global scope
-     * @type {Object}
-     */
-    global: {}
+    namespaces: {}
 };
 
 
@@ -105,17 +98,13 @@ Autoloader.prototype.register = function (cb) {
         throw new Error("Autoloader is already registered");
     }
 
-    for (var i in global) {
-        autoloader.global[i] = global[i];
-    }
-
     global.__proto__ = this.createProxy(global, function (key) {
-        if (autoloader.global[key]) {
-            return autoloader.global[key];
+        if (undefined !== autoloader.namespaces[key]) {
+            return autoloader.namespaceProxy(autoloader.namespaces[key]);
         }
 
-        if (autoloader.namespaces[key]) {
-            return autoloader.namespaceProxy(autoloader.namespaces[key]);
+        if (undefined !== autoloader.namespaces['']) {
+            return autoloader.namespaceProxy(autoloader.namespaces[''])[key];
         }
     });
 
@@ -219,17 +208,7 @@ Autoloader.prototype.namespaceProxy = function (namespace) {
         var ns = new Namespace(key, namespace);
         directories = ns.getDirectories();
 
-        if (Array.isArray(directories)) {
-            if (directories.length > 0) {
-                return autoloader.namespaceProxy(ns);
-            }
-        } else {
-            if (fs.existsSync(directories)) {
-                return autoloader.namespaceProxy(ns);
-            }
-        }
-
-        throw new Error('Impossible to load namespace "' + namespace.getFullName() + '.' + key + '"')
+        return autoloader.namespaceProxy(ns);
     });
 };
 
