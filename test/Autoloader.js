@@ -25,12 +25,25 @@ autoloader.register(function () {
 
     describe('Autoloader', function () {
         describe('#getNamespace()', function () {
-            it('should return a Namespace', function () {
-                autoloader.getNamespace().should.be.instanceOf(Namespace);
+            it('should return a Namespace or undefined', function () {
+                autoloader.getNamespace('a').should.be.instanceOf(Namespace);
+                autoloader.getNamespace('d').should.be.instanceOf(Namespace);
+                (autoloader.getNamespace('e') === undefined).should.be.true;
             });
 
-            it('should return the root namespace', function () {
-                autoloader.getNamespace().getName().should.be.exactly('');
+            it('should return the namespace of the given name', function () {
+                autoloader.getNamespace('a').getName().should.be.exactly('a');
+                autoloader.getNamespace('d').getName().should.be.exactly('d');
+            });
+        });
+
+        describe('#getNamespaces()', function () {
+            it('should return an Array', function () {
+                autoloader.getNamespaces().should.be.an.Array;
+            });
+
+            it('should return registered namespaces', function () {
+                autoloader.getNamespaces().length.should.be.exactly(2);
             });
         });
 

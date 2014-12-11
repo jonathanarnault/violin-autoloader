@@ -48,6 +48,15 @@ Autoloader.prototype = {
 
 
 /**
+ * 
+ * @param  {String} directory
+ */
+Autoloader.prototype.import = function (directory) {
+
+};
+
+
+/**
  * Register a new namespace
  * @param  {String} namespace
  * @param  {Array|String} directories
@@ -147,7 +156,7 @@ Autoloader.prototype.createProxy = function (obj, callback) {
             return k;
         },
         get: function (r, key) {
-            if (key != 'v8debug' && target[key] === undefined) {
+            if (target[key] == undefined) {
                 return callback(key);
             }
             return target[key];
@@ -166,6 +175,12 @@ Autoloader.prototype.namespaceProxy = function (namespace) {
     var autoloader = this;
 
     return autoloader.createProxy(namespace, function (key) {
+        if (namespace.getName() === '') {
+            var exclude = ['v8debug', 'setup', 'suiteSetup', 'suiteTeardown', 'teardown', 'constuctor', 'suite', 'test'];
+            if (-1 != exclude.indexOf(key)) {
+                return undefined;
+            }
+        }
 
         if (undefined !== (c = namespace.getClass(key))) {
             return c;
@@ -207,13 +222,22 @@ Autoloader.prototype.namespaceProxy = function (namespace) {
 
 
 /**
- * Get root namespace
+ * Get a registered namespace
  * @param  {String} name
  * @return {Namespace}
  * @public
  */
-Autoloader.prototype.getNamespace = function () {
-    return this.namespace;
+Autoloader.prototype.getNamespace = function (name) {
+    return this.namespace.getChild(name);
+};
+
+
+/**
+ * Get registered namespaces
+ * @return {Array}
+ */
+Autoloader.prototype.getNamespaces = function () {
+    return this.namespace.getChildren();
 };
 
 module.exports = Autoloader;
