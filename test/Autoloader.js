@@ -95,6 +95,43 @@ autoloader.register(function () {
             });
         });
 
+        describe("#load()", function () {
+            var a = new Autoloader();
+
+            it("should throw an error if file does not exist", function () {
+                (function () {
+                    a.load(path.join(__dirname, "namespaces", "unexisting"));
+                }).should.throw;
+            });
+
+            it("should load an existing file", function () {
+                (function () {
+                    a.load(path.join(__dirname, "namespaces", "load.js"));
+                }).should.not.throw;
+
+                a.load(path.join(__dirname, "namespaces", "load.js"))
+                global.load.should.be.a.String;
+            });
+
+            it("should load an existing directory", function () {
+                (function () {
+                    a.load(path.join(__dirname, "namespaces", "load"));
+                }).should.not.throw;
+
+                a.load(path.join(__dirname, "namespaces", "load"))
+                global.loadA.should.be.a.String;
+            });
+
+            it("should load an existing directory recursivly", function () {
+                (function () {
+                    a.load(path.join(__dirname, "namespaces", "load"), true);
+                }).should.not.throw;
+
+                a.load(path.join(__dirname, "namespaces", "load"), true)
+                global.loadB.should.be.a.String;
+            });
+        });
+
         describe("Access a namespace", function () {
             it("should not throw an error if namespace or class exists", function () {
                 (function () {

@@ -11,7 +11,7 @@
     "test": "test"
   },
   "scripts": {
-    "test": "mocha --harmony --harmony-proxies --recursive"
+    "test": "mocha --harmony --harmony-proxies"
   },
   "author": "Jonathan ARNAULT <contact@jonathanarnault.com>",
   "license": "MIT",

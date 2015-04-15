@@ -237,4 +237,34 @@ Autoloader.prototype.getNamespaces = function () {
     return this.namespace.getChildren();
 };
 
+
+/**
+ * Autoload a directory or a file
+ * @param p Directoryor file  to load
+ * @param recursive Whether load should be recursive or not
+ */
+Autoloader.prototype.load = function (p, recursive) {
+    var stats = fs.statSync(p),
+        fileStats;
+
+    if (stats.isFile()) {
+        require(p);
+    } else {
+        var files = fs.readdirSync(p);
+        for (var i in files) {
+            var file = files[i],
+                fpath = path.join(p, file);
+            if (file == "." || file == "..") {
+                continue;
+            }
+            fileStats = fs.statSync(fpath);
+            if (fileStats.isFile()) {
+                require(fpath);
+            } else if (recursive) {
+                this.load(fpath, recursive);
+            }
+        }
+    }
+};
+
 module.exports = Autoloader;
