@@ -17,6 +17,6 @@ var Autoloader = require("violin-autoloader"),
 autoloader.registerNamespace("mynamespace", "directory");
 
 autoloader.register(function () {
-    var myclass = new mynamspace.MyClass();
+    var myclass = new mynamespace.MyClass();
 });
 ```
