@@ -7,10 +7,10 @@
  * file that was distributed with this source code.
  */
 
-var fs = require('fs'),
-    path = require('path');
+var fs = require("fs"),
+    path = require("path");
 
-var Namespace = require('./Namespace.js');
+var Namespace = require("./Namespace.js");
 
 /**
  * Class autoloader
@@ -19,7 +19,7 @@ var Namespace = require('./Namespace.js');
 var Autoloader = function () {
 
     this.frozen = false;
-    this.namespace = new Namespace('', []);
+    this.namespace = new Namespace("", []);
     this.proxy = this.namespaceProxy(this.namespace);
 };
 
@@ -46,16 +46,6 @@ Autoloader.prototype = {
     proxy: null
 };
 
-
-/**
- * 
- * @param  {String} directory
- */
-Autoloader.prototype.import = function (directory) {
-
-};
-
-
 /**
  * Register a new namespace
  * @param  {String} namespace
@@ -66,25 +56,24 @@ Autoloader.prototype.registerNamespace = function (namespace, directories) {
     if (this.frozen) {
         throw new Error("Autoloader is frozen");
     }
-
-    var ns = namespace.split('.'),
+    var ns = namespace.split("."),
         n;
 
-    if (namespace === '') {
+    if (namespace === "") {
         this.namespace.setDirectories(directories);
         return;
     }
 
     namespace = this.namespace;
-    for (var i=0; i < ns.length; i++) {
+    for (var i = 0; i < ns.length; i++) {
         if (undefined === (n = namespace.getChild(ns[i]))) {
             if (i === ns.length - 1) {
                 n = new Namespace(ns[i], directories, namespace);
             } else {
                 n = new Namespace(ns[i], namespace);
             }
-            
         } else {
+
             if (i === ns.length - 1) {
                 n.setDirectories(directories);
             }
@@ -125,8 +114,11 @@ Autoloader.prototype.register = function (cb) {
  * @private
  */
 Autoloader.prototype.createProxy = function (obj, callback) {
-    var target = obj.__proto__;
-    
+    var target = obj.__proto__,
+        o = {};
+    for (var i in target) {
+        o[i] = obj[i];
+    }
     return Proxy.create({
         getPropertyDescriptor: Object.getOwnPropertyDescriptor.bind(null, target),
         getOwnPropertyDescriptor: Object.getOwnPropertyDescriptor.bind(null, target),
@@ -134,15 +126,15 @@ Autoloader.prototype.createProxy = function (obj, callback) {
         getPropertyNames: Object.getOwnPropertyNames.bind(null, target),
         keys: Object.keys.bind(null, target),
         defineProperty: Object.defineProperty.bind(null, target),
-        
+
         set: function (r, key, value) {
             target[key] = value;
             return true;
         },
-        has: function (key) { 
+        has: function (key) {
             return key in target;
         },
-        hasOwn: function (key) { 
+        hasOwn: function (key) {
             return target.hasOwnProperty(key);
         },
         delete: function (key) {
@@ -151,7 +143,7 @@ Autoloader.prototype.createProxy = function (obj, callback) {
         },
         enumerate: function () {
             var i = 0,
-                k = []; 
+                k = [];
             for (k[i++] in target);
             return k;
         },
@@ -159,9 +151,9 @@ Autoloader.prototype.createProxy = function (obj, callback) {
             if (target[key] == undefined) {
                 return callback(key);
             }
-            return target[key];
+            return o[key];
         }
-    }, Object.getPrototypeOf(target));
+    }, target);
 };
 
 
@@ -175,8 +167,8 @@ Autoloader.prototype.namespaceProxy = function (namespace) {
     var autoloader = this;
 
     return autoloader.createProxy(namespace, function (key) {
-        if (namespace.getName() === '') {
-            var exclude = ['v8debug', 'setup', 'suiteSetup', 'suiteTeardown', 'teardown', 'constuctor', 'suite', 'test'];
+        if (namespace.getName() === "") {
+            var exclude = ["v8debug", "setup", "suiteSetup", "suiteTeardown", "teardown", "constuctor", "suite", "test"];
             if (-1 != exclude.indexOf(key)) {
                 return undefined;
             }
@@ -192,7 +184,7 @@ Autoloader.prototype.namespaceProxy = function (namespace) {
 
         // Classes
         var directories = namespace.getDirectories(),
-            filename = key + '.js',
+            filename = key + ".js",
             file;
         if (Array.isArray(directories)) {
             directories = directories.filter(function (directory) {
@@ -214,7 +206,7 @@ Autoloader.prototype.namespaceProxy = function (namespace) {
 
         // Namespaces
         var ns = new Namespace(key, namespace);
-        directories = ns.getDirectories();
+        ns.calculateDirectories();
 
         return autoloader.namespaceProxy(ns);
     });

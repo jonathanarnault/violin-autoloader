@@ -7,8 +7,8 @@
  * file that was distributed with this source code.
  */
 
-var path = require('path'),
-    fs = require('fs');
+var path = require("path"),
+    fs = require("fs");
 
 /**
  * Class autoloader
@@ -110,10 +110,10 @@ Namespace.prototype.getName = function () {
  * @public
  */
 Namespace.prototype.getFullName = function () {
-    var name = '';
+    var name = "";
     if (null !== this.parent) {
         name = this.parent.getFullName();
-        name += (name !== '') ? '.' : '';
+        name += (name !== "") ? "." : "";
     }
     return name + this.name;
 };
@@ -157,7 +157,7 @@ Namespace.prototype.propagateDirectories = function () {
 
 /**
  * Calculate directories path from parent directories
- * @private 
+ * @private
  */
 Namespace.prototype.calculateDirectories = function () {
     if (Array.isArray(directories = this.parent.getDirectories())) {
