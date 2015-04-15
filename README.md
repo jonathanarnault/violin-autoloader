@@ -18,6 +18,6 @@ autoloader.registerNamespace("mynamespace", "directory");
 autoloader.load("filename.js");
 
 autoloader.register(function () {
-    var myclass = new mynamspace.MyClass();
+    var myclass = new mynamespace.MyClass();
 });
 ```
