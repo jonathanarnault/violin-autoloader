@@ -30,6 +30,14 @@ autoloader.register(function () {
             a.b.d.getDirectories().should.be.a.string;
         });
 
+        it("should add class filename in a static field for each autoloaded class", function () {
+            a.b.E._autoloader.filename.should.be.a.String;
+        });
+
+        it("should add class namespace in a static field for each autoloaded class", function () {
+            a.b.E._autoloader.namespace.should.be.instanceOf(Namespace);
+        });
+
         describe("#getNamespace()", function () {
             it("should return a Namespace or undefined", function () {
                 autoloader.getNamespace("a").should.be.instanceOf(Namespace);

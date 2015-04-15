@@ -200,6 +200,11 @@ Autoloader.prototype.namespaceProxy = function (namespace) {
 
         if (undefined !== file && fs.existsSync(file)) {
             var C = require(file);
+
+            C._autoloader = {};
+            C._autoloader.filename = file;
+            C._autoloader.namespace = namespace;
+
             namespace.addClass(key, C);
             return C;
         }
