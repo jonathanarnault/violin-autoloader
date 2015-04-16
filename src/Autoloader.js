@@ -260,7 +260,7 @@ Autoloader.prototype.load = function (p, recursive, callback, done) {
 
     if (stats.isFile()) {
         exp = require(p);
-        if (undefined !== callback) {
+        if (callback) {
             callback(exp);
         }
     } else {
@@ -275,7 +275,7 @@ Autoloader.prototype.load = function (p, recursive, callback, done) {
             fileStats = fs.statSync(fpath);
             if (fileStats.isFile()) {
                 exp = require(fpath);
-                if (undefined !== callback) {
+                if (callback) {
                     callback(exp);
                 }
                 return cb();
@@ -287,7 +287,7 @@ Autoloader.prototype.load = function (p, recursive, callback, done) {
                 });
             }
         }, function () {
-            if (undefined !== done) {
+            if (done) {
                 done();
             }
         });
