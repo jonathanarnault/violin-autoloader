@@ -122,7 +122,7 @@ autoloader.register(function () {
                 global.loadA.should.be.a.String;
             });
 
-            it("should load an existing directory recursivly", function () {
+            it("should load an existing directory recursively", function () {
                 (function () {
                     a.load(path.join(__dirname, "namespaces", "load"), true);
                 }).should.not.throw;
@@ -131,15 +131,21 @@ autoloader.register(function () {
                 global.loadB.should.be.a.String;
             });
 
-            it("should be able to load a file or a dirctory with a callback", function (done) {
+            it("should be able to load a file or a directory with a callback", function () {
                 a.load(path.join(__dirname, "namespaces", "load-cb.js"), function (str) {
                     str.should.be.a.String;
-                    c
-                    done();
                 });
 
                 a.load(path.join(__dirname, "namespaces", "load-cb"), true, function (str) {
                     str.should.be.a.String;
+                });
+            });
+
+            it("should be able to load a file or a directory with a callback asynchronously", function (done) {
+                a.load(path.join(__dirname, "namespaces", "load-cb"), true, function (str) {
+                    str.should.be.a.String;
+                }, function () {
+                    done();
                 });
             });
         });

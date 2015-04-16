@@ -8,7 +8,8 @@
  */
 
 var fs = require("fs"),
-    path = require("path");
+    path = require("path"),
+    async = require("async");
 
 var Namespace = require("./Namespace.js");
 
@@ -243,15 +244,17 @@ Autoloader.prototype.getNamespaces = function () {
  * @param p Directoryor file  to load
  * @param recursive Whether load should be recursive or not
  * @param callback A callback applied for each require
+ * @param done Callback called when load is done
  */
-Autoloader.prototype.load = function (p, recursive, callback) {
+Autoloader.prototype.load = function (p, recursive, callback, done) {
 
     if (typeof recursive === "function") {
         callback = recursive;
         recursive = undefined;
     }
 
-    var stats = fs.statSync(p),
+    var self = this,
+        stats = fs.statSync(p),
         fileStats,
         exp;
 
@@ -262,22 +265,32 @@ Autoloader.prototype.load = function (p, recursive, callback) {
         }
     } else {
         var files = fs.readdirSync(p);
-        for (var i in files) {
-            var file = files[i],
-                fpath = path.join(p, file);
+        async.eachSeries(files, function (file, cb) {
+            var fpath = path.join(p, file);
+
             if (file == "." || file == "..") {
-                continue;
+                return cb();
             }
+
             fileStats = fs.statSync(fpath);
             if (fileStats.isFile()) {
                 exp = require(fpath);
                 if (undefined !== callback) {
                     callback(exp);
                 }
-            } else if (recursive) {
-                this.load(fpath, recursive, callback);
+                return cb();
             }
-        }
+
+            if (recursive) {
+                return self.load(fpath, recursive, callback, function () {
+                    return cb();
+                });
+            }
+        }, function () {
+            if (undefined !== done) {
+                done();
+            }
+        });
     }
 };
 
