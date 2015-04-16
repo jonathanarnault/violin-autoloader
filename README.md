@@ -6,7 +6,7 @@ Autoloader for Node.Js
 
 `npm install violin-autoloader`
 
-Will install the latest version of violin-autoloader (currently 0.3.1)
+Will install the latest version of violin-autoloader (currently 0.5.0)
 
 ## Example
 
@@ -17,7 +17,13 @@ var Autoloader = require("violin-autoloader"),
 autoloader.registerNamespace("mynamespace", "directory");
 autoloader.load("filename.js");
 
-autoloader.register(function () {
-    var myclass = new mynamespace.MyClass();
+autoloader.load("dir", true, function (exp) { // called for each file loaded
+
+    // Do something with exp 
+    
+}, function () { // Called when load is done
+    autoloader.register(function () { // Register autoloader
+        var myclass = new mynamespace.MyClass();
+    });
 });
 ```
