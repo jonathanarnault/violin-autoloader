@@ -130,6 +130,18 @@ autoloader.register(function () {
                 a.load(path.join(__dirname, "namespaces", "load"), true)
                 global.loadB.should.be.a.String;
             });
+
+            it("should be able to load a file or a dirctory with a callback", function (done) {
+                a.load(path.join(__dirname, "namespaces", "load-cb.js"), function (str) {
+                    str.should.be.a.String;
+                    c
+                    done();
+                });
+
+                a.load(path.join(__dirname, "namespaces", "load-cb"), true, function (str) {
+                    str.should.be.a.String;
+                });
+            });
         });
 
         describe("Access a namespace", function () {

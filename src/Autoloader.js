@@ -242,13 +242,24 @@ Autoloader.prototype.getNamespaces = function () {
  * Autoload a directory or a file
  * @param p Directoryor file  to load
  * @param recursive Whether load should be recursive or not
+ * @param callback A callback applied for each require
  */
-Autoloader.prototype.load = function (p, recursive) {
+Autoloader.prototype.load = function (p, recursive, callback) {
+
+    if (typeof recursive === "function") {
+        callback = recursive;
+        recursive = undefined;
+    }
+
     var stats = fs.statSync(p),
-        fileStats;
+        fileStats,
+        exp;
 
     if (stats.isFile()) {
-        require(p);
+        exp = require(p);
+        if (undefined !== callback) {
+            callback(exp);
+        }
     } else {
         var files = fs.readdirSync(p);
         for (var i in files) {
@@ -259,9 +270,12 @@ Autoloader.prototype.load = function (p, recursive) {
             }
             fileStats = fs.statSync(fpath);
             if (fileStats.isFile()) {
-                require(fpath);
+                exp = require(fpath);
+                if (undefined !== callback) {
+                    callback(exp);
+                }
             } else if (recursive) {
-                this.load(fpath, recursive);
+                this.load(fpath, recursive, callback);
             }
         }
     }

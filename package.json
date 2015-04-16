@@ -1,6 +1,6 @@
 {
   "name": "violin-autoloader",
-  "version": "0.3.1",
+  "version": "0.5.0",
   "description": "Autoloader for Node.js",
   "repository": {
     "type": "git",
