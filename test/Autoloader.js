@@ -174,5 +174,26 @@ autoloader.register(function () {
                 }).should.throw();
             });
         });
+
+        describe("#loadBindings", function () {
+            var a = new Autoloader();
+
+            a.loadBindings("bindings", path.resolve("test", "bindings"), function () {
+                it("should create namespaces", function () {
+                    bindings.should.be.instanceOf("Namespace");
+                    bindings.printstring.should.be.instanceOf("Namespace");
+                });
+                it("created namespaces should be correct", function () {
+                    bindings.printuint32.getDirectories().should.be.a.string;
+                    should.be.null(bindings.printuint32.Release);
+                    should.be.null(bindings.printstring.getDirectories());
+                });
+
+                it("should give correct classes", function () {
+                    bindings.printstring.getClasses().should.be.empty;
+                    bindings.printuint32.getClasses().should.be.empty;
+                });
+            });
+        });
     });
 });

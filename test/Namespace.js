@@ -13,8 +13,10 @@ var path = require("path"),
 var Namespace = require("../src/Namespace.js");
 
 describe("Namespace", function () {
-    var A = function () {},
-        B = function () {};
+    var A = function () {
+        },
+        B = function () {
+        };
 
     var a = new Namespace("a", path.join(__dirname, "namespaces", "a")),
         b = new Namespace("b", a),

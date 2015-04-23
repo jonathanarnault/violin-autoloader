@@ -81,7 +81,7 @@ Autoloader.prototype.registerNamespace = function (namespace, directories) {
         }
         namespace = n;
     }
-}
+};
 
 /**
  * Register autoloader
@@ -292,6 +292,54 @@ Autoloader.prototype.load = function (p, recursive, callback, done) {
             }
         });
     }
+};
+
+/**
+ * Searches and loads all bindings in a path using the given namespace format.
+ * Assumed dir hierarchy is: root/ < binding >/ [<build/|out/] [Debug/|Release/] < binding >.node
+ * Registered namespace is namespaceFormat.< binding > [.debug|release] , default is release.
+ * @param {String} namespace the name of the namespace under which we will add the bindings
+ * @param {String} rootPath the root path of the bindings
+ * @param {Function=} callback when loading is done
+ */
+Autoloader.prototype.loadBindings = function (namespace, rootPath, callback) {
+    var pathToTry = [
+        ["build"],
+        ["build", "Release"],
+        ["build", "Debug"],
+        ["out"],
+        ["out", "Release"],
+        ["out", "Debug"],
+        ["Release"],
+        ["Debug"],
+        [""]
+    ];
+
+    var files = fs.readdirSync(rootPath),
+        self = this;
+
+    async.eachSeries(files, function (binding, cb) {
+        var bindingPath = path.resolve(rootPath, binding);
+
+        for (var folder in pathToTry) {
+            bindingPath = path.resolve(bindingPath, path.resolve(folder), binding + ".node");
+            if (fs.exists(bindingPath)) {
+                var namespaceString = namespaceFormat.append(binding);
+                self.registerNamespace(namespaceString, bindingPath);
+                var namespace = self.namespace;
+                for (var ns in namespaceString.split(".")) {
+                    namespace = namespace.getChild(ns);
+                }
+                namespace[folder.toLowerCase()] = require(bindingPath);
+            }
+        }
+        return cb();
+    }, function () {
+        if (callback) {
+            return callback();
+        }
+    });
+
 };
 
 module.exports = Autoloader;
