@@ -49,23 +49,24 @@ Autoloader.prototype = {
 
 /**
  * Register a new namespace
- * @param  {String} namespace
+ * @param  {String} namespaceName
  * @param  {Array|String} directories
  * @public
+ * @return {Namespace} the newly-created Namespace
  */
-Autoloader.prototype.registerNamespace = function (namespace, directories) {
+Autoloader.prototype.registerNamespace = function (namespaceName, directories) {
     if (this.frozen) {
         throw new Error("Autoloader is frozen");
     }
-    var ns = namespace.split("."),
+    var ns = namespaceName.split("."),
         n;
 
-    if (namespace === "") {
+    if (namespaceName === "") {
         this.namespace.setDirectories(directories);
-        return;
+        return this.namespace;
     }
 
-    namespace = this.namespace;
+    var namespace = this.namespace;
     for (var i = 0; i < ns.length; i++) {
         if (undefined === (n = namespace.getChild(ns[i]))) {
             if (i === ns.length - 1) {
@@ -81,6 +82,7 @@ Autoloader.prototype.registerNamespace = function (namespace, directories) {
         }
         namespace = n;
     }
+    return namespace;
 };
 
 /**
@@ -149,12 +151,12 @@ Autoloader.prototype.createProxy = function (obj, callback) {
             return k;
         },
         get: function (r, key) {
-            if (target[key] == undefined) {
-                return callback(key);
+            if (o.hasOwnProperty(key)) {
+                return o[key];
             }
-            return o[key];
+            return callback(key);
         }
-    }, target);
+    }, obj);
 };
 
 
@@ -168,6 +170,11 @@ Autoloader.prototype.namespaceProxy = function (namespace) {
     var autoloader = this;
 
     return autoloader.createProxy(namespace, function (key) {
+
+        if (namespace.hasOwnProperty(key)) {
+            return namespace[key];
+        }
+
         if (namespace.getName() === "") {
             var exclude = ["v8debug", "setup", "suiteSetup", "suiteTeardown", "teardown", "constuctor", "suite", "test"];
             if (-1 != exclude.indexOf(key)) {
@@ -298,11 +305,11 @@ Autoloader.prototype.load = function (p, recursive, callback, done) {
  * Searches and loads all bindings in a path using the given namespace format.
  * Assumed dir hierarchy is: root/ < binding >/ [<build/|out/] [Debug/|Release/] < binding >.node
  * Registered namespace is namespaceFormat.< binding > [.debug|release] , default is release.
- * @param {String} namespace the name of the namespace under which we will add the bindings
+ * @param {String} namespacePrefix the name of the namespace under which we will add the bindings
  * @param {String} rootPath the root path of the bindings
  * @param {Function=} callback when loading is done
  */
-Autoloader.prototype.loadBindings = function (namespace, rootPath, callback) {
+Autoloader.prototype.loadBindings = function (namespacePrefix, rootPath, callback) {
     var pathToTry = [
         ["build"],
         ["build", "Release"],
@@ -318,27 +325,51 @@ Autoloader.prototype.loadBindings = function (namespace, rootPath, callback) {
     var files = fs.readdirSync(rootPath),
         self = this;
 
-    async.eachSeries(files, function (binding, cb) {
-        var bindingPath = path.resolve(rootPath, binding);
+    var bindingNamespace = self.registerNamespace(namespacePrefix, rootPath);
 
-        for (var folder in pathToTry) {
-            bindingPath = path.resolve(bindingPath, path.resolve(folder), binding + ".node");
-            if (fs.exists(bindingPath)) {
-                var namespaceString = namespaceFormat.append(binding);
-                self.registerNamespace(namespaceString, bindingPath);
-                var namespace = self.namespace;
-                for (var ns in namespaceString.split(".")) {
-                    namespace = namespace.getChild(ns);
+    async.eachSeries(files, function (binding, cb) {
+            for (var folder in pathToTry) {
+                var bindingFolder = path.resolve(rootPath, binding, pathToTry[folder].join(path.sep)),
+                    bindingPath = path.resolve(bindingFolder, binding + ".node");
+
+                if (fs.existsSync(bindingPath)) {
+                    //Do we have a suffix like Release or Debug to store our requireObject ?
+                    var requireObject;
+                    if (pathToTry[folder].indexOf("Release") !== -1) {
+                        requireObject = "Release";
+                    } else if (pathToTry[folder].indexOf("Debug") !== -1) {
+                        requireObject = "Debug";
+                    }
+
+                    //Building namespace name
+                    var namespaceString = namespacePrefix,
+                        namespace;
+
+                    // If the folder doesn't have any Release or Debug one, we use the bindings namespace
+                    if (undefined === requireObject) {
+                        requireObject = binding;
+                        namespace = bindingNamespace;
+                    }
+                    //otherwise, we build a dedicated namespace for this binding
+                    else {
+                        namespaceString += "." + binding;
+                        namespace = self.registerNamespace(namespaceString, bindingFolder);
+                    }
+
+                    // Actual require
+                    namespace[requireObject] = require(bindingPath);
                 }
-                namespace[folder.toLowerCase()] = require(bindingPath);
+            }
+            return cb();
+        }
+        ,
+        function () {
+            if (callback) {
+                return callback();
             }
         }
-        return cb();
-    }, function () {
-        if (callback) {
-            return callback();
-        }
-    });
+    )
+    ;
 
 };
 
