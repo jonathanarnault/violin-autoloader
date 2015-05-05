@@ -6,7 +6,7 @@ Autoloader for Node.Js
 
 `npm install violin-autoloader`
 
-Will install the latest version of violin-autoloader (currently 0.6.0)
+Will install the latest version of violin-autoloader (currently 0.6.1)
 
 ## Example
 
