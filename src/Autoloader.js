@@ -47,6 +47,66 @@ Autoloader.prototype = {
     proxy: null
 };
 
+
+/**
+ * Proxy Handler
+ * @constructor
+ */
+Autoloader.ProxyHandler = function (target, callback) {
+    this.target = target;
+    this.proto = Object.getPrototypeOf(target);
+    this.callback = callback;
+};
+
+Autoloader.ProxyHandler.prototype = {
+    getPropertyDescriptor: function () {
+        Object.getPr
+        return Object.getOwnPropertyDescriptor(this.target)
+    },
+    getOwnPropertyDescriptor: function () {
+        return Object.getOwnPropertyDescriptor(this.target)
+    },
+    getOwnPropertyNames: function () {
+        return Object.getOwnPropertyNames(this.target)
+    },
+    getPropertyNames: function () {
+        return Object.getPropertyNames(this.target)
+    },
+    keys: function () {
+        return Object.keys(this.target);
+    },
+    defineProperty: function (r, prop, desc) {
+        return Object.defineProperty(this.target, prop, desc)
+    },
+    set: function (r, key, value) {
+        this.target[key] = value;
+        return true;
+    },
+    has: function (key) {
+        return key in this.target;
+    },
+    hasOwn: function (key) {
+        return this.target.hasOwnProperty(key);
+    },
+    delete: function (key) {
+        delete this.target[key];
+        return true;
+    },
+    enumerate: function () {
+        var i = 0,
+            k = [];
+        for (k[i++] in this.target);
+        return k;
+    },
+    get: function (r, key) {
+        if (this.target.hasOwnProperty(key) || this.proto.hasOwnProperty(key)) {
+            return this.target[key];
+        }
+
+        return this.callback(key);
+    }
+};
+
 /**
  * Register a new namespace
  * @param  {String} namespaceName
@@ -97,7 +157,7 @@ Autoloader.prototype.register = function (cb) {
         throw new Error("Autoloader is already registered");
     }
 
-    global.__proto__ = this.createProxy(global, function (key) {
+    global.__proto__ = this.createProxy(global.__proto__, function (key) {
         return autoloader.proxy[key];
     });
 
@@ -116,47 +176,8 @@ Autoloader.prototype.register = function (cb) {
  * @return {Proxy}
  * @private
  */
-Autoloader.prototype.createProxy = function (obj, callback) {
-    var target = obj.__proto__,
-        o = {};
-    for (var i in target) {
-        o[i] = obj[i];
-    }
-    return Proxy.create({
-        getPropertyDescriptor: Object.getOwnPropertyDescriptor.bind(null, target),
-        getOwnPropertyDescriptor: Object.getOwnPropertyDescriptor.bind(null, target),
-        getOwnPropertyNames: Object.getOwnPropertyNames.bind(null, target),
-        getPropertyNames: Object.getOwnPropertyNames.bind(null, target),
-        keys: Object.keys.bind(null, target),
-        defineProperty: Object.defineProperty.bind(null, target),
-
-        set: function (r, key, value) {
-            target[key] = value;
-            return true;
-        },
-        has: function (key) {
-            return key in target;
-        },
-        hasOwn: function (key) {
-            return target.hasOwnProperty(key);
-        },
-        delete: function (key) {
-            delete target[key];
-            return true;
-        },
-        enumerate: function () {
-            var i = 0,
-                k = [];
-            for (k[i++] in target);
-            return k;
-        },
-        get: function (r, key) {
-            if (o.hasOwnProperty(key)) {
-                return o[key];
-            }
-            return callback(key);
-        }
-    }, obj);
+Autoloader.prototype.createProxy = function (o, callback) {
+    return Proxy.create(new Autoloader.ProxyHandler(o, callback), Object.getPrototypeOf(o));
 };
 
 
