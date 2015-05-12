@@ -10,8 +10,8 @@
 var fs = require("fs"),
     path = require("path"),
     async = require("async"),
-    debug = require("debug")("autoloader"),
-    error = debug("app:error");
+    debug = require("debug"),
+    error = debug("violin.autoloader:error");
 
 var Namespace = require("./Namespace.js");
 
