@@ -9,7 +9,9 @@
 
 var fs = require("fs"),
     path = require("path"),
-    async = require("async");
+    async = require("async"),
+    debug = require("debug")("autoloader"),
+    error = debug("app:error");
 
 var Namespace = require("./Namespace.js");
 
@@ -378,16 +380,23 @@ Autoloader.prototype.loadBindings = function (namespacePrefix, rootPath, callbac
                     }
 
                     // Actual require
-                    namespace[requireObject] = require(bindingPath);
+                    try {
+                        namespace[requireObject] = require(bindingPath);
+                    } catch (e) {
+                        //We only have the wrong architecture for this release
+                        if (-1 !== e.message.indexOf("ELF")) {
+                            error("Impossible to require binding '" + bindingPath + "': " + e);
+                        } else {
+                            throw e;
+                        }
+                    }
                 }
             }
             return cb();
         }
         ,
-        function () {
-            if (callback) {
-                return callback();
-            }
+        function (err) {
+            return callback && callback(err);
         }
     )
     ;
