@@ -128,8 +128,9 @@ autoloader.register(function () {
                     a.load(path.join(__dirname, "namespaces", "load"), true);
                 }).should.not.throw;
 
-                a.load(path.join(__dirname, "namespaces", "load"), true)
-                global.loadB.should.be.a.String;
+                a.load(path.join(__dirname, "namespaces", "load"), true, function(str) {}, function() {
+                    global.loadB.should.be.a.String;
+                });
             });
 
             it("should be able to load a file or a directory with a callback", function () {
