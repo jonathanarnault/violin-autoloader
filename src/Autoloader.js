@@ -9,9 +9,7 @@
 
 var fs = require("fs"),
     path = require("path"),
-    async = require("async"),
-    debug = require("debug"),
-    error = debug("violin.autoloader:error");
+    async = require("async");
 
 var Namespace = require("./Namespace.js");
 
@@ -334,14 +332,14 @@ Autoloader.prototype.load = function (p, recursive, callback, done) {
  */
 Autoloader.prototype.loadBindings = function (namespacePrefix, rootPath, callback) {
     var pathToTry = [
-        ["build"],
-        ["build", "Release"],
-        ["build", "Debug"],
-        ["out"],
-        ["out", "Release"],
-        ["out", "Debug"],
         ["Release"],
+        ["build", "Release"],
+        ["out", "Release"],
+        ["build"],
+        ["out"],
         ["Debug"],
+        ["build", "Debug"],
+        ["out", "Debug"],
         [""]
     ];
 
@@ -350,7 +348,7 @@ Autoloader.prototype.loadBindings = function (namespacePrefix, rootPath, callbac
 
     var bindingNamespace = self.registerNamespace(namespacePrefix, rootPath);
 
-    async.eachSeries(files, function (binding, cb) {
+    async.each(files, function (binding, cb) {
             for (var folder in pathToTry) {
                 var bindingFolder = path.resolve(rootPath, binding, pathToTry[folder].join(path.sep)),
                     bindingPath = path.resolve(bindingFolder, binding + ".node");
@@ -358,9 +356,9 @@ Autoloader.prototype.loadBindings = function (namespacePrefix, rootPath, callbac
                 if (fs.existsSync(bindingPath)) {
                     //Do we have a suffix like Release or Debug to store our requireObject ?
                     var requireObject;
-                    if (pathToTry[folder].indexOf("Release") !== -1) {
+                    if (-1 !== pathToTry[folder].indexOf("Release")) {
                         requireObject = "Release";
-                    } else if (pathToTry[folder].indexOf("Debug") !== -1) {
+                    } else if (-1 !== pathToTry[folder].indexOf("Debug")) {
                         requireObject = "Debug";
                     }
 
@@ -385,22 +383,19 @@ Autoloader.prototype.loadBindings = function (namespacePrefix, rootPath, callbac
                     } catch (e) {
                         //We only have the wrong architecture for this release
                         if (-1 !== e.message.indexOf("ELF")) {
-                            error("Impossible to require binding '" + bindingPath + "': " + e);
+                            cb("Impossible to require binding '" + bindingPath + "': " + e);
                         } else {
-                            throw e;
+                            return cb(e);
                         }
                     }
                 }
             }
             return cb();
-        }
-        ,
+        },
         function (err) {
             return callback && callback(err);
         }
-    )
-    ;
-
+    );
 };
 
 module.exports = Autoloader;
