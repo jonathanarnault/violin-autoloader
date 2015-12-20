@@ -1,3 +1,5 @@
+"use strict";
+
 /**
  * This file is part of the Violin package.
  *
@@ -7,254 +9,113 @@
  * file that was distributed with this source code.
  */
 
-var path = require("path"),
+var path = require("path").posix,
     fs = require("fs");
 
 /**
- * Class autoloader
+ * This class represents a namespace
+ * A namespace is composed of of sub-namespaces and classes
  * @author Jonathan ARNAULT
  */
-var Namespace = function (name, directories, parent) {
+class Namespace {
 
-    if (directories instanceof Namespace) {
-        parent = directories;
-        directories = undefined;
+    /**
+     * Create a new Namespace
+     * @param  {string} name - The namespace name
+     * @param  {Namespace} parent - The namespace parent, can be null
+     */
+    constructor(name, parent, directory) {
+
+        /**
+         * Namespace name
+         * @type {string}
+         */
+        this._name = name;
+
+        /**
+         * Namespace parent
+         * @type {Namespace}
+         */
+        this._parent = parent;
+
+        /**
+         * Namespace directory
+         * @type {string}
+         */
+        this._directory = directory;
+
+        /**
+         * This Map contains loaded classes and sub-namespaces
+         * @type {Map<string, Namespace|Function>}
+         */
+        this._children = new Map();
     }
 
-    this.name = name;
-    this.children = {};
-    this.classes = {};
-    this.parent = parent || null;
-
-    if (null !== this.parent) {
-        this.parent.addChild(this);
-    }
-
-    if (null !== this.parent && undefined === directories) { // Inherits directories from parent
-        this.calculateDirectories();
-
-    } else { // Define directories using directories parameter
-        if (undefined === directories) {
-            this.directories = [];
-        } else if (Array.isArray(directories)) {
-            this.directories = directories.filter(function (directory) {
-                return fs.existsSync(path.join(directory));
-            });
-        } else {
-            this.directories = directories;
+    /**
+     * Set a directory for the namespace if not alreay set
+     * @param  {string} directory - The namespace directory
+     * @throws {Error} If the directory is already set
+     */
+    set directory(directory) {
+        if (undefined != this._directory) {
+            throw new Error(`Cannot set the directory for "${this._name}" namespace : it already exist.`);
         }
-    }
-};
-
-Namespace.prototype = {
-
-    /**
-     * Namespace parent
-     * @type {Namespace}
-     * @private
-     */
-    parent: null,
-
-    /**
-     * Namespace name
-     * @type {String}
-     * @private
-     */
-    name: null,
-
-    /**
-     * Namespace directories
-     * @type {Array}
-     * @private
-     */
-    directories: [],
-
-    /**
-     * Namespace children
-     * @type {Object}
-     * @private
-     */
-    children: {},
-
-    /**
-     * Namespace classes
-     * @type {Object}
-     */
-    classes: {}
-};
-
-
-/**
- * Get namespace parent
- * @return {Namespace}
- * @public
- */
-Namespace.prototype.getParent = function () {
-    return this.parent;
-};
-
-
-/**
- * Get namespace name
- * @return {String}
- * @public
- */
-Namespace.prototype.getName = function () {
-    return this.name;
-};
-
-
-/**
- * Get namespace fullname
- * @return {String}
- * @public
- */
-Namespace.prototype.getFullName = function () {
-    var name = "";
-    if (null !== this.parent) {
-        name = this.parent.getFullName();
-        name += (name !== "") ? "." : "";
-    }
-    return name + this.name;
-};
-
-
-/**
- * Get namespace autoload directories
- * @return {Array}
- * @public
- */
-Namespace.prototype.getDirectories = function () {
-    return this.directories;
-};
-
-
-/**
- * Add directories to the namespace directories
- * @param {Array|String} directories
- * @public
- */
-Namespace.prototype.setDirectories = function (directories) {
-    this.directories = directories;
-    this.propagateDirectories();
-};
-
-
-/**
- * Propagate directories updates to children
- * @public
- */
-Namespace.prototype.propagateDirectories = function () {
-    if (this.directories.length === 0) {
-        this.calculateDirectories();
+        this._directory = directory;
     }
 
-    for (var i in this.children) {
-        this.children[i].propagateDirectories();
-    }
-};
-
-
-/**
- * Calculate directories path from parent directories
- * @private
- */
-Namespace.prototype.calculateDirectories = function () {
-    if (Array.isArray(directories = this.parent.getDirectories())) {
-        this.directories = directories.filter(function (directory) {
-            return fs.existsSync(path.join(directory, this.name));
-        });
-
-        if (this.directories.length === 1) {
-            this.directories = path.join(this.directories[0], this.name);
-        } else {
-            this.directories = this.directories.map(function (directory) {
-                return path.join(directory, this.name);
-            });
+    /**
+     * Get a child
+     * @param {string} child - The child name
+     * @param {Namespace|Function=} value - The new child
+     * @return {Namespace|Function|undefined} - This methods returns undefined if the child is not found
+     * @throws {Error} If child contains "." or when trying to acess a child without a defined directory
+     */
+    child(child, value) {
+        if (-1 !== child.indexOf(".")) {
+            throw new Error("A child of a namespace cannot contain \".\".");
         }
-    } else {
-        fs.existsSync(this.directories = path.join(directories, this.name));
+
+        if (undefined != value) {
+            this._children.set(child, value);
+            return;
+        }
+
+
+            if (undefined == this._directory) {
+                throw new Error(`Directory is not set for "${this._name}" namespace.`);
+            }
+
+        // Do not reload child if it is cached
+        if (!this._children.has(child)) {
+            // Load sub-namespace if exists
+            try {
+                let file = path.resolve(this._directory, child),
+                    stats = fs.statSync(file);
+                if (stats.isDirectory()) {
+                    this._children.set(child, new Namespace(child, this, file));
+                    return this._children.get(child);
+                }
+
+            } catch (err) {}
+
+            // Load class if exists
+            try {
+                let file = path.resolve(this._directory, `${child}.js`),
+                    stats = fs.statSync(file);
+                if (stats.isFile()) {
+                    var C = require(file);
+                    C._autoload = {
+                        file: file,
+                        namespace: this
+                    };
+                    this._children.set(child, C);
+                    return this._children.get(child);
+                }
+
+            } catch (err) {}
+        }
+        return this._children.get(child);
     }
-};
-
-
-/**
- * Whether the namespace has a child of the given name
- * @param  {String}  child
- * @return {Boolean}
- * @public
- */
-Namespace.prototype.hasChild = function (child) {
-    return undefined !== this.children[child];
-};
-
-
-/**
- * Get child
- * @param  {String} child
- * @return {Namespace}
- * @public
- */
-Namespace.prototype.getChild = function (child) {
-    return this.children[child];
-};
-
-
-/**
- * Add child to namespace
- * @param {Namespace} namespace
- * @public
- */
-Namespace.prototype.addChild = function (namespace) {
-    this.children[namespace.getName()] = namespace;
-};
-
-
-/**
- * Get namespace children
- * @return {Array}
- * @public
- */
-Namespace.prototype.getChildren = function () {
-    var children = this.children;
-    return Object.keys(children).map(function (key) {
-        return children[key];
-    });
-};
-
-
-/**
- * Add class to namespace
- * @param {String} c
- * @param {Function} C
- * @public
- */
-Namespace.prototype.addClass = function (c, C) {
-    this.classes[c] = C;
-};
-
-
-/**
- * Get child
- * @param  {String} child
- * @return {Namespace}
- * @public
- */
-Namespace.prototype.getClass = function (c) {
-    return this.classes[c];
-};
-
-
-/**
- * Get namespace classes
- * @return {Array}
- * @public
- */
-Namespace.prototype.getClasses = function () {
-    var classes = this.classes;
-    return Object.keys(classes).map(function (c) {
-        return classes[c];
-    });
-};
+}
 
 module.exports = Namespace;

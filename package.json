@@ -8,7 +8,7 @@
     },
     "main": "src/Autoloader",
     "scripts": {
-      "test": "mocha --harmony --harmony-proxies"
+      "test": "mocha --harmony-proxies -r assert -r should"
     },
     "author": "Jonathan ARNAULT <contact@jonathanarnault.com>",
     "license": "MIT",
