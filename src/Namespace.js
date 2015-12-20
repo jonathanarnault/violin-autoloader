@@ -52,6 +52,20 @@ class Namespace {
     }
 
     /**
+     * [children description]
+     * @return {[type]} [description]
+     */
+    get children() {
+        var iter = this._children.keys(),
+            keys = [],
+            next;
+        while (!(next = iter.next()).done) {
+            keys.push(next.value);
+        }
+        return keys;
+    }
+
+    /**
      * Set a directory for the namespace if not alreay set
      * @param  {string} directory - The namespace directory
      * @throws {Error} If the directory is already set

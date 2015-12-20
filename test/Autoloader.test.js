@@ -9,10 +9,10 @@
 
 var path = require("path");
 
-/*var Autoloader = require("../src/Autoloader.js"),
-    Namespace = require("../src/Namespace.js"),
-    autoloader = new Autoloader();*/
+var Autoloader = require("../src/Autoloader.js"),
+    Namespace = require("../src/Namespace.js");
 
 describe("Autoloader", function () {
-
+    var autoloader =  new Autoloader();
+    autoloader.register("root", path.resolve(__dirname, "use-case"));
 });
