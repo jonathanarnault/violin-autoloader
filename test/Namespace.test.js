@@ -1,3 +1,5 @@
+"use strict";
+
 /**
  * This file is part of the Violin package.
  *
@@ -11,7 +13,7 @@ var path = require("path");
 
 var Namespace = require("../src/Namespace.js");
 
-const   NAMESPACE_NAME = "root",
+const   NAMESPACE_NAME = "rt",
         NAMESPACE_PARENT = null,
         NAMESPACE_DIR = path.resolve(__dirname, "use-case");
 
@@ -66,9 +68,40 @@ describe("Namespace", function () {
             n.child("E", E);
             n.child("E").should.be.equal(E);
         });
+
+        it("should throw an exception if there is no directory set when accessing a non cached child", function () {
+            var n = new Namespace(NAMESPACE_NAME, NAMESPACE_PARENT),
+                b = new Namespace(NAMESPACE_NAME, n);
+            (function () {
+                n.child("a")
+            }).should.throw;
+
+            (function () {
+                n.child("b")
+            }).should.throw;
+        });
     });
 
-    describe("#directory", function ( ) {
+    describe("#children", function () {
+        it("should be a getter", function () {
+            var n = new Namespace(NAMESPACE_NAME, NAMESPACE_PARENT, NAMESPACE_DIR);
+            (function () {
+                n.children = "";
+            }).should.throw;
+        });
+        it("should return an array of string", function () {
+            var n = new Namespace(NAMESPACE_NAME, NAMESPACE_PARENT, NAMESPACE_DIR);
+            n.child("a");
+            n.child("b");
+
+            n.children.should.be.an.Array;
+            for (let child of n.children) {
+                child.should.be.a.String;
+            }
+        });
+    });
+
+    describe("#directory", function () {
         it("should be a setter", function () {
             var n = new Namespace(NAMESPACE_NAME, NAMESPACE_PARENT, NAMESPACE_DIR);
             (undefined === n.directory).should.be.true;

@@ -28,35 +28,42 @@ class Namespace {
 
         /**
          * Namespace name
+         * @private
          * @type {string}
          */
         this._name = name;
 
         /**
          * Namespace parent
+         * @private
          * @type {Namespace}
          */
         this._parent = parent;
+        if (this._parent) { this._parent.child(this._name, this); }
 
         /**
          * Namespace directory
+         * @private
          * @type {string}
          */
         this._directory = directory;
 
         /**
          * This Map contains loaded classes and sub-namespaces
+         * @private
          * @type {Map<string, Namespace|Function>}
          */
         this._children = new Map();
     }
 
     /**
-     * [children description]
-     * @return {[type]} [description]
+     * Get namespace children
+     * @public
+     * @return {string[]}
      */
     get children() {
-        var iter = this._children.keys(),
+        // Cannot use spread operator here (4.0.0 compatibility)
+        let iter = this._children.keys(),
             keys = [],
             next;
         while (!(next = iter.next()).done) {
@@ -67,6 +74,7 @@ class Namespace {
 
     /**
      * Set a directory for the namespace if not alreay set
+     * @public
      * @param  {string} directory - The namespace directory
      * @throws {Error} If the directory is already set
      */
@@ -79,6 +87,7 @@ class Namespace {
 
     /**
      * Get a child
+     * @public
      * @param {string} child - The child name
      * @param {Namespace|Function=} value - The new child
      * @return {Namespace|Function|undefined} - This methods returns undefined if the child is not found
@@ -94,20 +103,18 @@ class Namespace {
             return;
         }
 
-
+        // Do not reload child if it is cached
+        if (!this._children.has(child)) {
             if (undefined == this._directory) {
                 throw new Error(`Directory is not set for "${this._name}" namespace.`);
             }
 
-        // Do not reload child if it is cached
-        if (!this._children.has(child)) {
             // Load sub-namespace if exists
             try {
                 let file = path.resolve(this._directory, child),
                     stats = fs.statSync(file);
                 if (stats.isDirectory()) {
-                    this._children.set(child, new Namespace(child, this, file));
-                    return this._children.get(child);
+                    return new Namespace(child, this, file);
                 }
 
             } catch (err) {}
@@ -117,7 +124,7 @@ class Namespace {
                 let file = path.resolve(this._directory, `${child}.js`),
                     stats = fs.statSync(file);
                 if (stats.isFile()) {
-                    var C = require(file);
+                    let C = require(file);
                     C._autoload = {
                         file: file,
                         namespace: this
