@@ -88,11 +88,7 @@ class Autoloader {
 
         if (this._namespaces.has(namespaces[0])) {
             root = this._namespaces.get(namespaces[0]);
-            if (0 == level) {
-                try {
-                    root.directory = directory;
-                } catch (err) {}
-            }
+            if (0 == level) { this._updateNamespaceDirectory(root, directory); }
         } else {
             root = new Namespace(namespaces[0], null, (0 === level) ? directory : null);
             this._namespaces.set(namespaces[0], root);
@@ -102,17 +98,23 @@ class Autoloader {
         for (let i = 1; i < namespaces.length; i++) {
             try {
                 ns = ns.child(namespaces[i]);
-                if (i == level) {
-                    try {
-                        ns.directory = directory;
-                    } catch (err) {}
-                }
+                if (i == level) { this._updateNamespaceDirectory(ns, directory); }
             } catch (err) {
                 ns = new Namespace(namespaces[i], ns, (i == level) ? directory : null);
             }
         }
-
         return ns;
+    }
+
+
+    /**
+     * Update namespace directory if possible
+     * @private
+     */
+    _updateNamespaceDirectory(ns, directory) {
+        try {
+            ns.directory = directory;
+        } catch (err) {}
     }
 
     /**
