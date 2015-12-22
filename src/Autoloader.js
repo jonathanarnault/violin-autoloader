@@ -61,6 +61,8 @@ class Autoloader {
                         return done(err);
                     });
                 });
+            } else if (!file.endsWith(".js")) { // Only load javascript files
+                return done();
             } else {
                 try {
                     let r = require(file);

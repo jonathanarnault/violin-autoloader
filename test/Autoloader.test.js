@@ -119,7 +119,7 @@ describe("Autoloader", function () {
                 done();
             });
         });
-        
+
         it("should load a directory recursively", function (done) {
             Autoloader.load(path.resolve(LOAD_DIRECTORY, "dir"), function (err) {
                 global.__B_LOADED__.should.be.true;
@@ -139,6 +139,28 @@ describe("Autoloader", function () {
                     callback.should.be.calledWith("export");
                     callback.should.have.callCount(1 + 3);
                     done();
+                }, callback);
+            }, callback);
+        });
+
+        it("should return an error if a file cannot be loaded", function (done) {
+            Autoloader.load(path.resolve(LOAD_DIRECTORY, "B.js"), function (err) {
+                (!!err).should.be.true;
+                Autoloader.load(path.resolve(LOAD_DIRECTORY, "unexisting"), function (err) {
+                    (!!err).should.be.true;
+                    done();
+                });
+            });
+        });
+
+        it("should only load javascript files", function (done) {
+            let callback = sinon.spy();
+            Autoloader.load(path.resolve(LOAD_DIRECTORY, "js"), function (err) {
+                callback.should.be.calledWith("export");
+                callback.should.have.callCount(1);
+                Autoloader.load(path.resolve(LOAD_DIRECTORY, "js", "A.txt"), function (err) {
+                    callback.should.have.callCount(1);
+                    done()
                 }, callback);
             }, callback);
         });
