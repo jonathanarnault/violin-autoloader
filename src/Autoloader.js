@@ -49,15 +49,15 @@ class Autoloader {
      */
     static load(file, done, callback) {
         var self = this;
-        fs.stat(file, function (err, stats) {
+        fs.stat(file, (err, stats) => {
             if (err) {
                 return done(err);
             }
             if (stats.isDirectory()) {
-                fs.readdir(file, function (err, files) {
-                    async.each(files, function (f, cb) {
+                fs.readdir(file, (err, files) => {
+                    async.each(files, (f, cb) => {
                         self.load(path.resolve(file, f), cb, callback);
-                    }, function (err) {
+                    }, (err) => {
                         return done(err);
                     });
                 });
@@ -145,6 +145,53 @@ class Autoloader {
     }
 
     /**
+     * Load a binding
+     * @public
+     * @param  {string} namespace - The namespace of the binding
+     * @param  {string} binding - Binding path
+     */
+    binding(namespace, binding) {
+        let ns = this.namespace(namespace, null),
+            paths = [
+                "build/Release",
+                "out/Release",
+                "Release",
+                "build",
+                "out",
+                ".",
+                "build/Debug",
+                "out/Debug",
+                "Debug"
+            ];
+
+        for (let p of paths) {
+            try {
+                p = path.resolve(binding, p);
+                let stats = fs.statSync(p);
+                if (stats.isDirectory()) {
+                    let files = fs.readdirSync(p).filter((file) => {
+                        return file.endsWith(".node");
+                    });
+
+                    if (files.length == 0) {
+                        continue;
+                    }
+
+                    let r = require(path.resolve(p, files[0]));
+
+                    for (let k in r) {
+                        ns.child(k, r[k]);
+                    }
+                    return;
+                }
+            } catch (err) {
+                continue;
+            }
+        }
+        throw new Error(`Cannot load binding "${binding}`);
+    }
+
+    /**
      * Create a proxy for a namespace
      * @private
      * @param  {Namespace} n - The namespace
@@ -156,19 +203,19 @@ class Autoloader {
                 proto = Object.getPrototypeOf(n);
 
             this._cache.set(n, Proxy.create({
-                getOwnPropertyDescriptor: function () {
+                getOwnPropertyDescriptor() {
                     return Object.getOwnPropertyDescriptor(n)
                 },
-                getOwnPropertyNames: function () {
-                    return Object.getOwnPropertyNames(n)
-                },
-                keys: function () {
+                getOwnPropertyNames() {
                     return n.children;
                 },
-                hasOwn: function (key) {
-                    return n.hasOwnProperty(key);
+                keys() {
+                    return n.children;
                 },
-                get: function (receiver, key) {
+                hasOwn(key) {
+                    return -1 !== n.children.indexOf(key);
+                },
+                get(receiver, key) {
                     if (Autoloader.NAMESPACE_ACCESSOR_KEY == key) {
                         return n;
                     }

@@ -6,15 +6,17 @@
     "type": "git",
     "url": "https://github.com/violinjs/violin-autoloader.git"
   },
-  "main": "src/Autoloader",
+  "main": "src/Autoloader.js",
   "scripts": {
-    "test": "mocha --harmony-proxies -r assert -r should -r should-sinon"
+    "test": "mocha --harmony-proxies -r assert -r should -r should-sinon",
+    "compile-tests": "cd ./test/use-case/binding; node-gyp clean configure build"
   },
   "author": "Jonathan ARNAULT <contact@jonathanarnault.com>",
   "license": "MIT",
   "devDependencies": {
     "async": "~1.5.0",
     "mocha": "~2.3.0",
+    "nan": "^2.1.0",
     "should": "~8.0.0",
     "should-sinon": "0.0.3",
     "sinon": "^1.17.2"

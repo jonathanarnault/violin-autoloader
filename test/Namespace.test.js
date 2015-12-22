@@ -17,35 +17,35 @@ const   NAMESPACE_NAME = "rt",
         NAMESPACE_PARENT = null,
         NAMESPACE_DIR = path.resolve(__dirname, "use-case", "namespaces");
 
-describe("Namespace", function () {
+describe("Namespace", () => {
 
-    describe("#constructor()", function () {
+    describe("#constructor()", () => {
         var n = new Namespace(NAMESPACE_NAME, NAMESPACE_PARENT, NAMESPACE_DIR);
-        it("should set the namespace name", function () {
+        it("should set the namespace name", () => {
             n._name.should.be.equal(NAMESPACE_NAME);
             n.child("a")._name.should.be.equal("a");
         });
 
-        it("should set the namespace parent", function () {
+        it("should set the namespace parent", () => {
             (NAMESPACE_PARENT === n._parent).should.be.true;
             n.child("a")._parent.should.be.equal(n);
         });
 
-        it("should set the namespace directory", function () {
+        it("should set the namespace directory", () => {
             n._directory.should.be.equal(NAMESPACE_DIR);
             n.child("a")._directory.should.be.equal(path.resolve(NAMESPACE_DIR, "a"));
         });
     });
 
-    describe("#child()", function () {
-        it("should return sub-namespace", function () {
+    describe("#child()", () => {
+        it("should return sub-namespace", () => {
             var n = new Namespace(NAMESPACE_NAME, NAMESPACE_PARENT, NAMESPACE_DIR);
             n.child("a").should.be.an.instanceOf(Namespace);
             n.child("b").should.be.an.instanceOf(Namespace);
             n.child("a").child("c").should.be.an.instanceOf(Namespace);
         });
 
-        it("should set a sub-namespace", function () {
+        it("should set a sub-namespace", () => {
             var n = new Namespace(NAMESPACE_NAME, NAMESPACE_PARENT, NAMESPACE_DIR),
                 child = new Namespace(NAMESPACE_NAME, n, path.resolve(NAMESPACE_DIR, NAMESPACE_NAME));
 
@@ -53,7 +53,7 @@ describe("Namespace", function () {
             n.child(NAMESPACE_NAME).should.be.equal(child);
         });
 
-        it("should return a class", function () {
+        it("should return a class", () => {
             var n = new Namespace(NAMESPACE_NAME, NAMESPACE_PARENT, NAMESPACE_DIR);
             n.child("A").should.be.a.function;
             n.child("a").child("C").should.be.a.function;
@@ -61,7 +61,7 @@ describe("Namespace", function () {
             n.child("b").child("B").should.be.a.function;
         });
 
-        it("should set a class", function () {
+        it("should set a class", () => {
             var n = new Namespace(NAMESPACE_NAME, NAMESPACE_PARENT, NAMESPACE_DIR),
                 E = function E () {};
 
@@ -69,27 +69,27 @@ describe("Namespace", function () {
             n.child("E").should.be.equal(E);
         });
 
-        it("should throw an exception if there is no directory set when accessing a non cached child", function () {
+        it("should throw an exception if there is no directory set when accessing a non cached child", () => {
             var n = new Namespace(NAMESPACE_NAME, NAMESPACE_PARENT),
                 b = new Namespace(NAMESPACE_NAME, n);
-            (function () {
+            (() => {
                 n.child("a")
             }).should.throw;
 
-            (function () {
+            (() => {
                 n.child("b")
             }).should.throw;
         });
     });
 
-    describe("#children", function () {
-        it("should be a getter", function () {
+    describe("#children", () => {
+        it("should be a getter", () => {
             var n = new Namespace(NAMESPACE_NAME, NAMESPACE_PARENT, NAMESPACE_DIR);
-            (function () {
+            (() => {
                 n.children = "";
             }).should.throw;
         });
-        it("should return an array of string", function () {
+        it("should return an array of string", () => {
             var n = new Namespace(NAMESPACE_NAME, NAMESPACE_PARENT, NAMESPACE_DIR);
             n.child("a");
             n.child("b");
@@ -101,20 +101,20 @@ describe("Namespace", function () {
         });
     });
 
-    describe("#directory", function () {
-        it("should be a setter", function () {
+    describe("#directory", () => {
+        it("should be a setter", () => {
             var n = new Namespace(NAMESPACE_NAME, NAMESPACE_PARENT, NAMESPACE_DIR);
             (undefined === n.directory).should.be.true;
         });
-        it("should set a directory if not already set", function () {
+        it("should set a directory if not already set", () => {
             var n = new Namespace(NAMESPACE_NAME, NAMESPACE_PARENT);
-            (function () {
+            (() => {
                 n.directory = __dirname;
             }).should.not.throw;
         });
-        it("should throw an error if directory is already set", function () {
+        it("should throw an error if directory is already set", () => {
             var n = new Namespace(NAMESPACE_NAME, NAMESPACE_PARENT, NAMESPACE_DIR);
-            (function () {
+            (() => {
                 n.directory = __dirname;
             }).should.throw;
         });

@@ -17,60 +17,116 @@ var Autoloader = require("../src/Autoloader.js"),
 
 const   NAMESPACE_NAME = "rt",
         NAMESPACE_DIRECTORY = path.resolve(__dirname, "use-case", "namespaces"),
-        LOAD_DIRECTORY = path.resolve(__dirname, "use-case", "load");
+        LOAD_DIRECTORY = path.resolve(__dirname, "use-case", "load"),
+        BINDING_DIRECTORY = path.resolve(__dirname, "use-case", "binding");
 
-describe("Autoloader", function () {
-    describe("#register()", function () {
-        it ("should register autoloader", function () {
+describe("Autoloader", () => {
+    describe("#register()", () => {
+        it ("should register autoloader", () => {
             let autoloader = new Autoloader();
             autoloader.namespace(NAMESPACE_NAME, NAMESPACE_DIRECTORY);
-            (function () {
+            (() => {
                 autoloader.register();
                 autoloader.unregister();
             }).should.not.throw;
             (root instanceof Namespace).should.be.true;
         });
 
-        it("should throw an error if an autoloader is already registered", function () {
+        it("should throw an error if an autoloader is already registered", () => {
             let autoloader1 =  new Autoloader(),
                 autoloader2 = new Autoloader();
             autoloader1.register();
-            (function () {
+            (() => {
                 autoloader1.register();
             }).should.throw;
-            (function () {
+            (() => {
                 autoloader2.register();
             }).should.throw;
             autoloader1.unregister();
         });
     });
 
-    describe("#unregister()", function () {
-        it ("should unregister autoloader", function () {
+    describe("#unregister()", () => {
+        it ("should unregister autoloader", () => {
             let autoloader = new Autoloader();
             autoloader.namespace(NAMESPACE_NAME, NAMESPACE_DIRECTORY);
             autoloader.register();
             autoloader.unregister();
-            (function () {
+            (() => {
                 root;
             }).should.throw;
         });
 
-        it("should throw an error if an autoloader is not registered", function () {
+        it("should throw an error if an autoloader is not registered", () => {
             let autoloader =  new Autoloader();
-            (function () {
+            (() => {
                 autoloader.unregister();
             }).should.throw;
 
-            (function () {
+            (() => {
                 autoloader.register();
                 autoloader.unregister();
             }).should.not.throw;
         });
     });
 
-    describe("#namespace()", function () {
-        it("should register a namespace", function () {
+    describe("#load()", () => {
+        it("should load a file", (done) => {
+            Autoloader.load(path.resolve(LOAD_DIRECTORY, "A.js"), (err) => {
+                global.__A_LOADED__.should.be.true;
+                (!err).should.be.true;
+                done();
+            });
+        });
+
+        it("should load a directory recursively", (done) => {
+            Autoloader.load(path.resolve(LOAD_DIRECTORY, "dir"), (err) => {
+                global.__B_LOADED__.should.be.true;
+                global.__C_LOADED__.should.be.true;
+                global.__D_LOADED__.should.be.true;
+                (!err).should.be.true;
+                done();
+            });
+        });
+
+        it("should apply a callback for each require if provided", (done) => {
+            let callback = sinon.spy();
+            Autoloader.load(path.resolve(LOAD_DIRECTORY, "A.js"), (err) => {
+                callback.should.be.calledWith("export");
+                callback.should.have.callCount(1);
+                Autoloader.load(path.resolve(LOAD_DIRECTORY, "dir"), (err) => {
+                    callback.should.be.calledWith("export");
+                    callback.should.have.callCount(1 + 3);
+                    done();
+                }, callback);
+            }, callback);
+        });
+
+        it("should return an error if a file cannot be loaded", (done) => {
+            Autoloader.load(path.resolve(LOAD_DIRECTORY, "B.js"), (err) => {
+                (!!err).should.be.true;
+                Autoloader.load(path.resolve(LOAD_DIRECTORY, "unexisting"), (err) => {
+                    (!!err).should.be.true;
+                    done();
+                });
+            });
+        });
+
+        it("should only load javascript files", (done) => {
+            let callback = sinon.spy();
+            Autoloader.load(path.resolve(LOAD_DIRECTORY, "js"), (err) => {
+                callback.should.be.calledWith("export");
+                callback.should.have.callCount(1);
+                Autoloader.load(path.resolve(LOAD_DIRECTORY, "js", "A.txt"), (err) => {
+                    callback.should.have.callCount(1);
+                    done()
+                }, callback);
+            }, callback);
+        });
+    });
+
+    describe("#namespace()", () => {
+        it("should register a namespace", () => {
             let autoloader =  new Autoloader();
             autoloader.namespace(NAMESPACE_NAME, NAMESPACE_DIRECTORY);
             autoloader.namespace("namespace.sub.sub", NAMESPACE_DIRECTORY);
@@ -83,7 +139,7 @@ describe("Autoloader", function () {
             autoloader.unregister();
         });
 
-        it("should update unset directories for existing namespaces", function () {
+        it("should update unset directories for existing namespaces", () => {
             let autoloader =  new Autoloader();
             autoloader.namespace(`${NAMESPACE_NAME}.c`, NAMESPACE_DIRECTORY);
             autoloader.namespace(NAMESPACE_NAME, NAMESPACE_DIRECTORY);
@@ -100,69 +156,33 @@ describe("Autoloader", function () {
             autoloader.unregister();
         });
 
-        it("should throw an error if autoloader is registered", function () {
+        it("should throw an error if autoloader is registered", () => {
             let autoloader =  new Autoloader();
             autoloader.namespace(NAMESPACE_NAME, NAMESPACE_DIRECTORY);
             autoloader.register();
-            (function () {
+            (() => {
                 autoloader.namespace("ns", NAMESPACE_DIRECTORY);
             }).should.throw;
             autoloader.unregister();
         });
     });
 
-    describe("#load()", function () {
-        it("should load a file", function (done) {
-            Autoloader.load(path.resolve(LOAD_DIRECTORY, "A.js"), function (err) {
-                global.__A_LOADED__.should.be.true;
-                (!err).should.be.true;
-                done();
-            });
+    describe("#binding()", () => {
+
+        it("should load a binding", () => {
+            let autoloader =  new Autoloader();
+            autoloader.binding("bindings.hw", BINDING_DIRECTORY);
+            autoloader.register();
+            let hello = bindings.hw.hello; // Cannot be used immediately
+            hello().should.be.equal("world");
+            autoloader.unregister();
         });
 
-        it("should load a directory recursively", function (done) {
-            Autoloader.load(path.resolve(LOAD_DIRECTORY, "dir"), function (err) {
-                global.__B_LOADED__.should.be.true;
-                global.__C_LOADED__.should.be.true;
-                global.__D_LOADED__.should.be.true;
-                (!err).should.be.true;
-                done();
-            });
-        });
-
-        it("should apply a callback for each require if provided", function (done) {
-            let callback = sinon.spy();
-            Autoloader.load(path.resolve(LOAD_DIRECTORY, "A.js"), function (err) {
-                callback.should.be.calledWith("export");
-                callback.should.have.callCount(1);
-                Autoloader.load(path.resolve(LOAD_DIRECTORY, "dir"), function (err) {
-                    callback.should.be.calledWith("export");
-                    callback.should.have.callCount(1 + 3);
-                    done();
-                }, callback);
-            }, callback);
-        });
-
-        it("should return an error if a file cannot be loaded", function (done) {
-            Autoloader.load(path.resolve(LOAD_DIRECTORY, "B.js"), function (err) {
-                (!!err).should.be.true;
-                Autoloader.load(path.resolve(LOAD_DIRECTORY, "unexisting"), function (err) {
-                    (!!err).should.be.true;
-                    done();
-                });
-            });
-        });
-
-        it("should only load javascript files", function (done) {
-            let callback = sinon.spy();
-            Autoloader.load(path.resolve(LOAD_DIRECTORY, "js"), function (err) {
-                callback.should.be.calledWith("export");
-                callback.should.have.callCount(1);
-                Autoloader.load(path.resolve(LOAD_DIRECTORY, "js", "A.txt"), function (err) {
-                    callback.should.have.callCount(1);
-                    done()
-                }, callback);
-            }, callback);
+        it("should throw an error while trying to load an unexisting binding", () => {
+            let autoloader =  new Autoloader();
+            (() => {
+                autoloader.binding("bindings.hw", path.resolve(BINDING_DIRECTORY, "unexisting"));
+            }).should.throw;
         });
     });
 });
