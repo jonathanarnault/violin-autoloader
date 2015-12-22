@@ -15,7 +15,7 @@ var Namespace = require("../src/Namespace.js");
 
 const   NAMESPACE_NAME = "rt",
         NAMESPACE_PARENT = null,
-        NAMESPACE_DIR = path.resolve(__dirname, "use-case");
+        NAMESPACE_DIR = path.resolve(__dirname, "use-case", "namespaces");
 
 describe("Namespace", function () {
 

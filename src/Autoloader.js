@@ -40,6 +40,40 @@ class Autoloader {
     }
 
     /**
+     * Load a file or a directory
+     * This method will require all files and directories
+     * @public
+     * @param  {String} file - The file or directory to load
+     * @param  {Function} done - The function called when the loading is done
+     * @param  {Function=} callback - A function called when a file is required
+     */
+    static load(file, done, callback) {
+        var self = this;
+        fs.stat(file, function (err, stats) {
+            if (err) {
+                return done(err);
+            }
+            if (stats.isDirectory()) {
+                fs.readdir(file, function (err, files) {
+                    async.each(files, function (f, cb) {
+                        self.load(path.resolve(file, f), cb, callback);
+                    }, function (err) {
+                        return done(err);
+                    });
+                });
+            } else {
+                try {
+                    let r = require(file);
+                    callback && callback(r);
+                    return done();
+                } catch (err) {
+                    done(err);
+                }
+            }
+        });
+    }
+
+    /**
      * Register autoloader
      * This method add registered namespaces to global context
      * @public
@@ -82,39 +116,30 @@ class Autoloader {
             throw new Error("Autoloader is registered");
         }
         let namespaces = namespace.split("."),
-            level = namespaces.length - 1,
-            root,
             ns;
 
-        if (this._namespaces.has(namespaces[0])) {
-            root = this._namespaces.get(namespaces[0]);
-            if (0 == level) { this._updateNamespaceDirectory(root, directory); }
-        } else {
-            root = new Namespace(namespaces[0], null, (0 === level) ? directory : null);
-            this._namespaces.set(namespaces[0], root);
-        }
-
-        ns = root;
-        for (let i = 1; i < namespaces.length; i++) {
-            try {
-                ns = ns.child(namespaces[i]);
-                if (i == level) { this._updateNamespaceDirectory(ns, directory); }
-            } catch (err) {
-                ns = new Namespace(namespaces[i], ns, (i == level) ? directory : null);
+        for (let i = 0; i < namespaces.length; i++) {
+            if (0 === i) { // Root namespace
+                if (this._namespaces.has(namespaces[0])) {
+                    ns = this._namespaces.get(namespaces[0]);
+                } else {
+                    ns = new Namespace(namespaces[0], null, null);
+                    this._namespaces.set(namespaces[0], ns);
+                }
+            } else { // Child namespace
+                try {
+                    ns = ns.child(namespaces[i]);
+                } catch (err) {
+                    ns = new Namespace(namespaces[i], ns, null);
+                }
+            }
+            if ((namespaces.length - 1) === i) {
+                try {
+                    ns.directory = directory;
+                } catch (err) {}
             }
         }
         return ns;
-    }
-
-
-    /**
-     * Update namespace directory if possible
-     * @private
-     */
-    _updateNamespaceDirectory(ns, directory) {
-        try {
-            ns.directory = directory;
-        } catch (err) {}
     }
 
     /**

@@ -1,26 +1,28 @@
 {
-    "name": "violin-autoloader",
-    "version": "1.0.0-dev",
-    "description": "Simple class autoloader for Node.js",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/violinjs/violin-autoloader.git"
-    },
-    "main": "src/Autoloader",
-    "scripts": {
-      "test": "mocha --harmony-proxies -r assert -r should"
-    },
-    "author": "Jonathan ARNAULT <contact@jonathanarnault.com>",
-    "license": "MIT",
-    "devDependencies": {
-        "should": "~8.0.0",
-        "mocha": "~2.3.0",
-        "async": "~1.5.0"
-    },
-    "peerDependencies": {
-        "async": "~1.5.0"
-    },
-    "engines" : {
-        "node" : ">=4.0.0"
-    }
+  "name": "violin-autoloader",
+  "version": "1.0.0-dev",
+  "description": "Simple class autoloader for Node.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/violinjs/violin-autoloader.git"
+  },
+  "main": "src/Autoloader",
+  "scripts": {
+    "test": "mocha --harmony-proxies -r assert -r should -r should-sinon"
+  },
+  "author": "Jonathan ARNAULT <contact@jonathanarnault.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "async": "~1.5.0",
+    "mocha": "~2.3.0",
+    "should": "~8.0.0",
+    "should-sinon": "0.0.3",
+    "sinon": "^1.17.2"
+  },
+  "peerDependencies": {
+    "async": "~1.5.0"
+  },
+  "engines": {
+    "node": ">=4.0.0"
+  }
 }

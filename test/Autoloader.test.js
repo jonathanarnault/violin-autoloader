@@ -1,3 +1,5 @@
+"use strict";
+
 /**
  * This file is part of the Violin package.
  *
@@ -7,18 +9,21 @@
  * file that was distributed with this source code.
  */
 
-var path = require("path");
+var path = require("path"),
+    sinon = require("sinon");
 
 var Autoloader = require("../src/Autoloader.js"),
     Namespace = require("../src/Namespace.js");
 
-const NAMESPACE_DIRECTORY = path.resolve(__dirname, "rt");
+const   NAMESPACE_NAME = "rt",
+        NAMESPACE_DIRECTORY = path.resolve(__dirname, "use-case", "namespaces"),
+        LOAD_DIRECTORY = path.resolve(__dirname, "use-case", "load");
 
 describe("Autoloader", function () {
     describe("#register()", function () {
         it ("should register autoloader", function () {
-            var autoloader = new Autoloader();
-            autoloader.namespace("rt", path.resolve(__dirname, "use-case"));
+            let autoloader = new Autoloader();
+            autoloader.namespace(NAMESPACE_NAME, NAMESPACE_DIRECTORY);
             (function () {
                 autoloader.register();
                 autoloader.unregister();
@@ -27,7 +32,7 @@ describe("Autoloader", function () {
         });
 
         it("should throw an error if an autoloader is already registered", function () {
-            var autoloader1 =  new Autoloader(),
+            let autoloader1 =  new Autoloader(),
                 autoloader2 = new Autoloader();
             autoloader1.register();
             (function () {
@@ -42,8 +47,8 @@ describe("Autoloader", function () {
 
     describe("#unregister()", function () {
         it ("should unregister autoloader", function () {
-            var autoloader = new Autoloader();
-            autoloader.namespace("rt", path.resolve(__dirname, "use-case"));
+            let autoloader = new Autoloader();
+            autoloader.namespace(NAMESPACE_NAME, NAMESPACE_DIRECTORY);
             autoloader.register();
             autoloader.unregister();
             (function () {
@@ -52,7 +57,7 @@ describe("Autoloader", function () {
         });
 
         it("should throw an error if an autoloader is not registered", function () {
-            var autoloader =  new Autoloader();
+            let autoloader =  new Autoloader();
             (function () {
                 autoloader.unregister();
             }).should.throw;
@@ -66,9 +71,9 @@ describe("Autoloader", function () {
 
     describe("#namespace()", function () {
         it("should register a namespace", function () {
-            var autoloader =  new Autoloader();
-            autoloader.namespace("rt", path.resolve(__dirname, "rt"));
-            autoloader.namespace("namespace.sub.sub", path.resolve(__dirname, "use-case"));
+            let autoloader =  new Autoloader();
+            autoloader.namespace(NAMESPACE_NAME, NAMESPACE_DIRECTORY);
+            autoloader.namespace("namespace.sub.sub", NAMESPACE_DIRECTORY);
 
             autoloader.register();
             (root instanceof Namespace).should.be.true;
@@ -79,9 +84,9 @@ describe("Autoloader", function () {
         });
 
         it("should update unset directories for existing namespaces", function () {
-            var autoloader =  new Autoloader();
-            autoloader.namespace("rt.c", NAMESPACE_DIRECTORY);
-            autoloader.namespace("rt", NAMESPACE_DIRECTORY);
+            let autoloader =  new Autoloader();
+            autoloader.namespace(`${NAMESPACE_NAME}.c`, NAMESPACE_DIRECTORY);
+            autoloader.namespace(NAMESPACE_NAME, NAMESPACE_DIRECTORY);
             autoloader.namespace("namespace.sub.sub.sub", NAMESPACE_DIRECTORY);
             autoloader.namespace("namespace.sub", NAMESPACE_DIRECTORY);
 
@@ -96,13 +101,46 @@ describe("Autoloader", function () {
         });
 
         it("should throw an error if autoloader is registered", function () {
-            var autoloader =  new Autoloader();
-            autoloader.namespace("rt", path.resolve(__dirname, "use-case"));
+            let autoloader =  new Autoloader();
+            autoloader.namespace(NAMESPACE_NAME, NAMESPACE_DIRECTORY);
             autoloader.register();
             (function () {
-                autoloader.namespace("ns", path.resolve(__dirname, "use-case"));
+                autoloader.namespace("ns", NAMESPACE_DIRECTORY);
             }).should.throw;
             autoloader.unregister();
+        });
+    });
+
+    describe("#load()", function () {
+        it("should load a file", function (done) {
+            Autoloader.load(path.resolve(LOAD_DIRECTORY, "A.js"), function (err) {
+                global.__A_LOADED__.should.be.true;
+                (!err).should.be.true;
+                done();
+            });
+        });
+        
+        it("should load a directory recursively", function (done) {
+            Autoloader.load(path.resolve(LOAD_DIRECTORY, "dir"), function (err) {
+                global.__B_LOADED__.should.be.true;
+                global.__C_LOADED__.should.be.true;
+                global.__D_LOADED__.should.be.true;
+                (!err).should.be.true;
+                done();
+            });
+        });
+
+        it("should apply a callback for each require if provided", function (done) {
+            let callback = sinon.spy();
+            Autoloader.load(path.resolve(LOAD_DIRECTORY, "A.js"), function (err) {
+                callback.should.be.calledWith("export");
+                callback.should.have.callCount(1);
+                Autoloader.load(path.resolve(LOAD_DIRECTORY, "dir"), function (err) {
+                    callback.should.be.calledWith("export");
+                    callback.should.have.callCount(1 + 3);
+                    done();
+                }, callback);
+            }, callback);
         });
     });
 });
