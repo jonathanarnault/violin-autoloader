@@ -14,4 +14,8 @@ pids
 
 # Dependency directory
 node_modules
+!node_modules/autoloader-test-1
+node_modules/autoloader-test-1/binding/build
+!node_modules/autoloader-test-2
+
 test/use-case/binding/build

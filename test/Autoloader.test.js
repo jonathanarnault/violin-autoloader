@@ -173,4 +173,8 @@ describe("Autoloader", () => {
             }).should.throw;
         });
     });
+
+    describe("#module()", () => {
+
+    });
 });

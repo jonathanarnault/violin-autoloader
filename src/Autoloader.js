@@ -44,6 +44,7 @@ class Autoloader {
      * @public
      * @param  {String} file - The file or directory to load
      * @param  {Function=} callback - This function is called for each file loaded
+     * @throws {Error} If the file or directory cannot be loaded
      */
     static load(file, callback) {
         try {
@@ -68,6 +69,7 @@ class Autoloader {
      * Register autoloader
      * This method add registered namespaces to global context
      * @public
+     * @throws {Error} If an autoloader is already registered
      */
     register() {
         if (Autoloader._registered) {
@@ -83,6 +85,7 @@ class Autoloader {
     /**
      * Unregister autoloader
      * @public
+     * @throws {Error} If the autoloader is not registered
      */
     unregister() {
         if (!this._registered) {
@@ -138,6 +141,7 @@ class Autoloader {
      * @public
      * @param  {string} namespace - The namespace of the binding
      * @param  {string} binding - Binding path
+     * @throws {Error} - If the binding cannot be loaded
      */
     binding(namespace, binding) {
         let ns = this.namespace(namespace, null),
@@ -177,7 +181,22 @@ class Autoloader {
                 continue;
             }
         }
-        throw new Error(`Cannot load binding "${binding}`);
+        throw new Error(`Autoloader cannot load "${binding} binding`);
+    }
+
+    /**
+     * Load a module
+     * @public
+     * @param {string} name - The module name
+     * @throw {Error} If the module cannot be loaded
+     */
+    module(name) {
+        let filename = `${name}/autoload.js`;
+        try {
+            
+        } catch (err) {
+            throw new Error(`Autoloader cannot load "${name}" module`, err);
+        }
     }
 
     /**
