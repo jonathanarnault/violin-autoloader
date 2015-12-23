@@ -191,9 +191,40 @@ class Autoloader {
      * @throw {Error} If the module cannot be loaded
      */
     module(name) {
-        let filename = `${name}/autoload.js`;
+        let loaded = new Set(),
+            modules = [name];
         try {
-            
+            while (modules.length > 0) {
+                let n = modules.pop(),
+                    mod = require(`${n}/autoload.js`);
+
+                if (mod.hasOwnProperty("namespaces")) {
+                    for (let ns in mod.namespaces) {
+                        this.namespace(ns, mod.namespaces[ns]);
+                    }
+                }
+
+                if (mod.hasOwnProperty("bindings")) {
+                    for (let b in mod.bindings) {
+                        this.binding(b, mod.bindings[b]);
+                    }
+                }
+
+                if (mod.hasOwnProperty("loads")) {
+                    for (let l of mod.loads) {
+                        Autoloader.load(l);
+                    }
+                }
+
+                if (mod.hasOwnProperty("modules")) {
+                    for (let m of mod.modules) {
+                        if (!loaded.has(m)) {
+                            modules.push(m);
+                            loaded.add(m);
+                        }
+                    }
+                }
+            }
         } catch (err) {
             throw new Error(`Autoloader cannot load "${name}" module`, err);
         }

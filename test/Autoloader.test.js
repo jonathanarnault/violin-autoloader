@@ -175,6 +175,30 @@ describe("Autoloader", () => {
     });
 
     describe("#module()", () => {
+        it("should load a module recursively", function () {
+            let autoloader = new Autoloader();
+            autoloader.module("autoloader-test-1");
+            autoloader.register();
+            (test.test1 instanceof Namespace).should.be.true;
+            (test.test2 instanceof Namespace).should.be.true;
+            (test.binding instanceof Namespace).should.be.true;
+            global.__F_LOADED__.should.be.true
+            autoloader.unregister();
+        });
 
+        it("should not throw an error if the same module is loaded twice", function () {
+            let autoloader = new Autoloader();
+            autoloader.module("autoloader-test-1");
+            (() => {
+                autoloader.module("autoloader-test-2");
+            }).should.not.throw;
+        });
+
+        it("should throw an error if a module cannot be loaded", function () {
+            let autoloader = new Autoloader();
+            (() => {
+                autoloader.module("autoloader-test-3");
+            }).should.throw;
+        });
     });
 });

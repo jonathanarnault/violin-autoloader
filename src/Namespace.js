@@ -99,6 +99,9 @@ class Namespace {
         }
 
         if (undefined != value) {
+            if (this._children.has(child)) { // Do not override child if already exist
+                return;
+            }
             this._children.set(child, value);
             return;
         }

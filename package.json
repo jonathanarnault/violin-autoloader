@@ -9,7 +9,7 @@
   "main": "src/Autoloader.js",
   "scripts": {
     "test": "mocha --harmony-proxies -r assert -r should -r should-sinon",
-    "compile-tests": "cd ./test/use-case/binding; node-gyp clean configure build"
+    "compile-tests": "cd ./test/use-case/binding; node-gyp clean configure build; cd ../../../node_modules/autoloader-test-1/binding; node-gyp clean configure build"
   },
   "author": "Jonathan ARNAULT <contact@jonathanarnault.com>",
   "license": "MIT",
