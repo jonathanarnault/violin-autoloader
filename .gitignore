@@ -13,9 +13,8 @@ pids
 .grunt
 
 # Dependency directory
-node_modules
-!node_modules/autoloader-test-1/*
-node_modules/autoloader-test-1/binding/build
-!node_modules/autoloader-test-2/*
+/node_modules/*
+!/node_modules/autoloader-test-*
+/node_modules/autoloader-test-*/binding/build
 
-test/use-case/binding/build
+/test/use-case/binding/build
