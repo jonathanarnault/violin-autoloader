@@ -10,8 +10,7 @@
  */
 
 var fs = require("fs"),
-    path = require("path"),
-    async = require("async");
+    path = require("path");
 
 var Namespace = require("./Namespace.js");
 

@@ -157,7 +157,6 @@ describe("Autoloader", () => {
     });
 
     describe("#binding()", () => {
-
         it("should load a binding", () => {
             let autoloader =  new Autoloader();
             autoloader.binding("bindings.hw", BINDING_DIRECTORY);

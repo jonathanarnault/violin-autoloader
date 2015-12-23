@@ -14,15 +14,11 @@
   "author": "Jonathan ARNAULT <contact@jonathanarnault.com>",
   "license": "MIT",
   "devDependencies": {
-    "async": "~1.5.0",
     "mocha": "~2.3.0",
     "nan": "^2.1.0",
     "should": "~8.0.0",
     "should-sinon": "0.0.3",
     "sinon": "^1.17.2"
-  },
-  "peerDependencies": {
-    "async": "~1.5.0"
   },
   "engines": {
     "node": ">=4.0.0"
