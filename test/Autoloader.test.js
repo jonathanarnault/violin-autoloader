@@ -71,57 +71,46 @@ describe("Autoloader", () => {
     });
 
     describe("#load()", () => {
-        it("should load a file", (done) => {
-            Autoloader.load(path.resolve(LOAD_DIRECTORY, "A.js"), (err) => {
-                global.__A_LOADED__.should.be.true;
-                (!err).should.be.true;
-                done();
-            });
+        it("should load a file", () => {
+            Autoloader.load(path.resolve(LOAD_DIRECTORY, "A.js"));
+            global.__A_LOADED__.should.be.true;
         });
 
-        it("should load a directory recursively", (done) => {
-            Autoloader.load(path.resolve(LOAD_DIRECTORY, "dir"), (err) => {
-                global.__B_LOADED__.should.be.true;
-                global.__C_LOADED__.should.be.true;
-                global.__D_LOADED__.should.be.true;
-                (!err).should.be.true;
-                done();
-            });
+        it("should load a directory recursively", () => {
+            Autoloader.load(path.resolve(LOAD_DIRECTORY, "dir"));
+            global.__B_LOADED__.should.be.true;
+            global.__C_LOADED__.should.be.true;
+            global.__D_LOADED__.should.be.true;
         });
 
-        it("should apply a callback for each require if provided", (done) => {
+        it("should apply a callback for each require if provided", () => {
             let callback = sinon.spy();
-            Autoloader.load(path.resolve(LOAD_DIRECTORY, "A.js"), (err) => {
-                callback.should.be.calledWith("export");
-                callback.should.have.callCount(1);
-                Autoloader.load(path.resolve(LOAD_DIRECTORY, "dir"), (err) => {
-                    callback.should.be.calledWith("export");
-                    callback.should.have.callCount(1 + 3);
-                    done();
-                }, callback);
-            }, callback);
+            Autoloader.load(path.resolve(LOAD_DIRECTORY, "A.js"), callback);
+            callback.should.be.calledWith("export");
+            callback.should.have.callCount(1);
+
+            Autoloader.load(path.resolve(LOAD_DIRECTORY, "dir"), callback);
+            callback.should.be.calledWith("export");
+            callback.should.have.callCount(1 + 3);
         });
 
-        it("should return an error if a file cannot be loaded", (done) => {
-            Autoloader.load(path.resolve(LOAD_DIRECTORY, "B.js"), (err) => {
-                (!!err).should.be.true;
-                Autoloader.load(path.resolve(LOAD_DIRECTORY, "unexisting"), (err) => {
-                    (!!err).should.be.true;
-                    done();
-                });
-            });
+        it("should throw an error if a file cannot be loaded", () => {
+            (() => {
+                Autoloader.load(path.resolve(LOAD_DIRECTORY, "B.js"))
+            }).should.throw;
+            (() => {
+                Autoloader.load(path.resolve(LOAD_DIRECTORY, "unexisting"))
+            }).should.throw;
         });
 
-        it("should only load javascript files", (done) => {
+        it("should only load javascript files", () => {
             let callback = sinon.spy();
-            Autoloader.load(path.resolve(LOAD_DIRECTORY, "js"), (err) => {
-                callback.should.be.calledWith("export");
-                callback.should.have.callCount(1);
-                Autoloader.load(path.resolve(LOAD_DIRECTORY, "js", "A.txt"), (err) => {
-                    callback.should.have.callCount(1);
-                    done()
-                }, callback);
-            }, callback);
+            Autoloader.load(path.resolve(LOAD_DIRECTORY, "js"), callback);
+            callback.should.be.calledWith("export");
+            callback.should.have.callCount(1);
+
+            Autoloader.load(path.resolve(LOAD_DIRECTORY, "js", "A.txt"), callback);
+            callback.should.have.callCount(1);
         });
     });
 

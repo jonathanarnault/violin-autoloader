@@ -44,35 +44,25 @@ class Autoloader {
      * This method will require all files and directories
      * @public
      * @param  {String} file - The file or directory to load
-     * @param  {Function} done - The function called when the loading is done
-     * @param  {Function=} callback - A function called when a file is required
+     * @param  {Function=} callback - This function is called for each file loaded
      */
-    static load(file, done, callback) {
-        var self = this;
-        fs.stat(file, (err, stats) => {
-            if (err) {
-                return done(err);
-            }
+    static load(file, callback) {
+        try {
+            let stats = fs.statSync(file);
             if (stats.isDirectory()) {
-                fs.readdir(file, (err, files) => {
-                    async.each(files, (f, cb) => {
-                        self.load(path.resolve(file, f), cb, callback);
-                    }, (err) => {
-                        return done(err);
-                    });
-                });
-            } else if (!file.endsWith(".js")) { // Only load javascript files
-                return done();
-            } else {
-                try {
-                    let r = require(file);
-                    callback && callback(r);
-                    return done();
-                } catch (err) {
-                    done(err);
+                let files = fs.readdirSync(file);
+                for (let f of files) {
+                    this.load(path.resolve(file, f), callback);
                 }
-            }
-        });
+            } else if (!file.endsWith(".js")) { // Only load javascript files
+               return;
+            } else {
+                let r = require(file);
+                callback && callback(r);
+           }
+        } catch (err) {
+            return new Error(`Autoloader cannot load ${file}`, err);
+        }
     }
 
     /**
