@@ -1,3 +1,5 @@
+"use strict";
+
 /**
  * This file is part of the Violin package.
  *
@@ -8,394 +10,278 @@
  */
 
 var fs = require("fs"),
-    path = require("path"),
-    async = require("async");
+    path = require("path");
 
 var Namespace = require("./Namespace.js");
 
-/**
- * Class autoloader
- * @author Jonathan ARNAULT
- */
-var Autoloader = function () {
+class Autoloader {
 
-    this.frozen = false;
-    this.namespace = new Namespace("", []);
-    this.proxy = this.namespaceProxy(this.namespace);
-};
+    constructor() {
 
-Autoloader.prototype = {
+        /**
+         * Autoloader namespaces to register
+         * @type {Map<string, Namespace>}
+         */
+        this._namespaces = new Map();
+
+        /**
+         * Cached proxies
+         * @private
+         * @type {Map}
+         */
+        this._cache = new Map();
+
+        /**
+         * Whether this autoloader is registered
+         * @type {boolean}
+         */
+        this._registered = false;
+    }
 
     /**
-     * Whether autoloader is frozen or not
-     * @type {Boolean}
-     * @private
+     * Load a file or a directory
+     * This method will require all files and directories
+     * @public
+     * @param  {String} file - The file or directory to load
+     * @param  {Function=} callback - This function is called for each file loaded
+     * @throws {Error} If the file or directory cannot be loaded
      */
-    frozen: false,
-
-    /**
-     * Root namespace
-     * @type {Namespace}
-     * @private
-     */
-    namespace: null,
-
-    /**
-     * Root namespace proxy
-     * @type {Proxy}
-     */
-    proxy: null
-};
-
-
-/**
- * Proxy Handler
- * @constructor
- */
-Autoloader.ProxyHandler = function (target, callback) {
-    this.target = target;
-    this.proto = Object.getPrototypeOf(target);
-    this.callback = callback;
-};
-
-Autoloader.ProxyHandler.prototype = {
-    getPropertyDescriptor: function () {
-        Object.getPr
-        return Object.getOwnPropertyDescriptor(this.target)
-    },
-    getOwnPropertyDescriptor: function () {
-        return Object.getOwnPropertyDescriptor(this.target)
-    },
-    getOwnPropertyNames: function () {
-        return Object.getOwnPropertyNames(this.target)
-    },
-    getPropertyNames: function () {
-        return Object.getPropertyNames(this.target)
-    },
-    keys: function () {
-        return Object.keys(this.target);
-    },
-    defineProperty: function (r, prop, desc) {
-        return Object.defineProperty(this.target, prop, desc)
-    },
-    set: function (r, key, value) {
-        this.target[key] = value;
-        return true;
-    },
-    has: function (key) {
-        return key in this.target;
-    },
-    hasOwn: function (key) {
-        return this.target.hasOwnProperty(key);
-    },
-    delete: function (key) {
-        delete this.target[key];
-        return true;
-    },
-    enumerate: function () {
-        var i = 0,
-            k = [];
-        for (k[i++] in this.target);
-        return k;
-    },
-    get: function (r, key) {
-        if (this.target.hasOwnProperty(key) || this.proto.hasOwnProperty(key)) {
-            return this.target[key];
-        }
-
-        return this.callback(key);
-    }
-};
-
-/**
- * Register a new namespace
- * @param  {String} namespaceName
- * @param  {Array|String} directories
- * @public
- * @return {Namespace} the newly-created Namespace
- */
-Autoloader.prototype.registerNamespace = function (namespaceName, directories) {
-    if (this.frozen) {
-        throw new Error("Autoloader is frozen");
-    }
-    var ns = namespaceName.split("."),
-        n;
-
-    if (namespaceName === "") {
-        this.namespace.setDirectories(directories);
-        return this.namespace;
-    }
-
-    var namespace = this.namespace;
-    for (var i = 0; i < ns.length; i++) {
-        if (undefined === (n = namespace.getChild(ns[i]))) {
-            if (i === ns.length - 1) {
-                n = new Namespace(ns[i], directories, namespace);
-            } else {
-                n = new Namespace(ns[i], namespace);
-            }
-        } else {
-
-            if (i === ns.length - 1) {
-                n.setDirectories(directories);
-            }
-        }
-        namespace = n;
-    }
-    return namespace;
-};
-
-/**
- * Register autoloader
- * @param  {Function} cb
- * @public
- */
-Autoloader.prototype.register = function (cb) {
-    var autoloader = this;
-
-    if (this.frozen) {
-        throw new Error("Autoloader is already registered");
-    }
-
-    global.__proto__ = this.createProxy(global.__proto__, function (key) {
-        return autoloader.proxy[key];
-    });
-
-    // Freeze Autoloader
-    this.frozen = true;
-
-    // Call callback
-    cb.call(null);
-};
-
-
-/**
- * Create a proxy for an Object
- * @param  {Object}   target
- * @param  {Function} callback
- * @return {Proxy}
- * @private
- */
-Autoloader.prototype.createProxy = function (o, callback) {
-    return Proxy.create(new Autoloader.ProxyHandler(o, callback), Object.getPrototypeOf(o));
-};
-
-
-/**
- * Create a proxy for a namespace
- * @param  {Namespace} namespace
- * @return {Proxy}
- * @private
- */
-Autoloader.prototype.namespaceProxy = function (namespace) {
-    var autoloader = this;
-
-    return autoloader.createProxy(namespace, function (key) {
-
-        if (namespace.hasOwnProperty(key)) {
-            return namespace[key];
-        }
-
-        if (namespace.getName() === "") {
-            var exclude = ["v8debug", "setup", "suiteSetup", "suiteTeardown", "teardown", "constuctor", "suite", "test"];
-            if (-1 != exclude.indexOf(key)) {
-                return undefined;
-            }
-        }
-
-        if (undefined !== (c = namespace.getClass(key))) {
-            return c;
-        }
-
-        if (undefined !== (child = namespace.getChild(key))) {
-            return autoloader.namespaceProxy(child);
-        }
-
-        // Classes
-        var directories = namespace.getDirectories(),
-            filename = key + ".js",
-            file;
-        if (Array.isArray(directories)) {
-            directories = directories.filter(function (directory) {
-                return fs.existsSync(path.join(directory, filename));
-            });
-
-            if (directories.length > 0) {
-                file = path.join(directories[0], filename);
-            }
-        } else {
-            file = path.join(directories, filename);
-        }
-
-        if (undefined !== file && fs.existsSync(file)) {
-            var C = require(file);
-
-            C._autoloader = {};
-            C._autoloader.filename = file;
-            C._autoloader.namespace = namespace;
-
-            namespace.addClass(key, C);
-            return C;
-        }
-
-        // Namespaces
-        var ns = new Namespace(key, namespace);
-        ns.calculateDirectories();
-
-        return autoloader.namespaceProxy(ns);
-    });
-};
-
-
-/**
- * Get a registered namespace
- * @param  {String} name
- * @return {Namespace}
- * @public
- */
-Autoloader.prototype.getNamespace = function (name) {
-    return this.namespace.getChild(name);
-};
-
-
-/**
- * Get registered namespaces
- * @return {Array}
- */
-Autoloader.prototype.getNamespaces = function () {
-    return this.namespace.getChildren();
-};
-
-
-/**
- * Autoload a directory or a file
- * @param p Directoryor file  to load
- * @param recursive Whether load should be recursive or not
- * @param callback A callback applied for each require
- * @param done Callback called when load is done
- */
-Autoloader.prototype.load = function (p, recursive, callback, done) {
-
-    if (typeof recursive === "function") {
-        callback = recursive;
-        recursive = undefined;
-    }
-
-    var self = this,
-        stats = fs.statSync(p),
-        fileStats,
-        exp;
-
-    if (stats.isFile()) {
-        exp = require(p);
-        if (callback) {
-            callback(exp);
-        }
-    } else {
-        var files = fs.readdirSync(p);
-        async.eachSeries(files, function (file, cb) {
-            var fpath = path.join(p, file);
-
-            if (file == "." || file == "..") {
-                return cb();
-            }
-
-            fileStats = fs.statSync(fpath);
-            if (fileStats.isFile()) {
-                exp = require(fpath);
-                if (callback) {
-                    callback(exp);
+    static load(file, callback) {
+        try {
+            let stats = fs.statSync(file);
+            if (stats.isDirectory()) {
+                let files = fs.readdirSync(file);
+                for (let f of files) {
+                    this.load(path.resolve(file, f), callback);
                 }
-                return cb();
-            }
-
-            if (recursive) {
-                return self.load(fpath, recursive, callback, function () {
-                    return cb();
-                });
-            }
-        }, function () {
-            if (done) {
-                done();
-            }
-        });
+            } else if (!file.endsWith(".js")) { // Only load javascript files
+               return;
+            } else {
+                let r = require(file);
+                callback && callback(r);
+           }
+        } catch (err) {
+            return new Error(`Autoloader cannot load ${file}`, err);
+        }
     }
-};
 
-/**
- * Searches and loads all bindings in a path using the given namespace format.
- * Assumed dir hierarchy is: root/ < binding >/ [<build/|out/] [Debug/|Release/] < binding >.node
- * Registered namespace is namespaceFormat.< binding > [.debug|release] , default is release.
- * @param {String} namespacePrefix the name of the namespace under which we will add the bindings
- * @param {String} rootPath the root path of the bindings
- * @param {Function=} callback when loading is done
- */
-Autoloader.prototype.loadBindings = function (namespacePrefix, rootPath, callback) {
-    var pathToTry = [
-        ["Release"],
-        ["build", "Release"],
-        ["out", "Release"],
-        ["build"],
-        ["out"],
-        ["Debug"],
-        ["build", "Debug"],
-        ["out", "Debug"],
-        [""]
-    ];
+    /**
+     * Register autoloader
+     * This method add registered namespaces to global context
+     * @public
+     * @throws {Error} If an autoloader is already registered
+     */
+    register() {
+        if (Autoloader._registered) {
+            throw new Error("An autoloader is already registered");
+        }
+        Autoloader._registered = true;
+        this._registered = true;
+        for (let name of this._namespaces.keys()) {
+            global[name] = this._createProxy(this._namespaces.get(name));
+        }
+    }
 
-    var files = fs.readdirSync(rootPath),
-        self = this;
+    /**
+     * Unregister autoloader
+     * @public
+     * @throws {Error} If the autoloader is not registered
+     */
+    unregister() {
+        if (!this._registered) {
+            throw new Error("Autoloader is not registered");
+        }
+        for (let name of this._namespaces.keys()) {
+            delete global[name];
+        }
+        this._registered = false;
+        Autoloader._registered = false;
+    }
 
-    var bindingNamespace = self.registerNamespace(namespacePrefix, rootPath);
+    /**
+     * Register a namespace
+     * @public
+     * @param  {string} namespace - Namespace name
+     * @param  {string=} directory - Namespace directory
+     * @return {Namespace}
+     */
+    namespace(namespace, directory) {
+        if (this._registered) {
+            throw new Error("Autoloader is registered");
+        }
+        let namespaces = namespace.split("."),
+            ns;
 
-    async.each(files, function (binding, cb) {
-            for (var folder in pathToTry) {
-                var bindingFolder = path.resolve(rootPath, binding, pathToTry[folder].join(path.sep)),
-                    bindingPath = path.resolve(bindingFolder, binding + ".node");
+        for (let i = 0; i < namespaces.length; i++) {
+            if (0 === i) { // Root namespace
+                if (this._namespaces.has(namespaces[0])) {
+                    ns = this._namespaces.get(namespaces[0]);
+                } else {
+                    ns = new Namespace(namespaces[0], null, null);
+                    this._namespaces.set(namespaces[0], ns);
+                }
+            } else { // Child namespace
+                try {
+                    ns = ns.child(namespaces[i]);
+                } catch (err) {
+                    ns = new Namespace(namespaces[i], ns, null);
+                }
+            }
+            if ((namespaces.length - 1) === i) {
+                try {
+                    ns.directory = directory;
+                } catch (err) {}
+            }
+        }
+        return ns;
+    }
 
-                if (fs.existsSync(bindingPath)) {
-                    //Do we have a suffix like Release or Debug to store our requireObject ?
-                    var requireObject;
-                    if (-1 !== pathToTry[folder].indexOf("Release")) {
-                        requireObject = "Release";
-                    } else if (-1 !== pathToTry[folder].indexOf("Debug")) {
-                        requireObject = "Debug";
+    /**
+     * Load a binding
+     * @public
+     * @param  {string} namespace - The namespace of the binding
+     * @param  {string} binding - Binding path
+     * @throws {Error} - If the binding cannot be loaded
+     */
+    binding(namespace, binding) {
+        let ns = this.namespace(namespace, null),
+            paths = [
+                "build/Release",
+                "out/Release",
+                "Release",
+                "build",
+                "out",
+                ".",
+                "build/Debug",
+                "out/Debug",
+                "Debug"
+            ];
+
+        for (let p of paths) {
+            try {
+                p = path.resolve(binding, p);
+                let stats = fs.statSync(p);
+                if (stats.isDirectory()) {
+                    let files = fs.readdirSync(p).filter((file) => {
+                        return file.endsWith(".node");
+                    });
+
+                    if (files.length == 0) {
+                        continue;
                     }
 
-                    //Building namespace name
-                    var namespaceString = namespacePrefix,
-                        namespace;
+                    let r = require(path.resolve(p, files[0]));
 
-                    // If the folder doesn't have any Release or Debug one, we use the bindings namespace
-                    if (undefined === requireObject) {
-                        requireObject = binding;
-                        namespace = bindingNamespace;
+                    for (let k in r) {
+                        ns.child(k, r[k]);
                     }
-                    //otherwise, we build a dedicated namespace for this binding
-                    else {
-                        namespaceString += "." + binding;
-                        namespace = self.registerNamespace(namespaceString, bindingFolder);
-                    }
+                    return;
+                }
+            } catch (err) {
+                continue;
+            }
+        }
+        throw new Error(`Autoloader cannot load "${binding} binding`);
+    }
 
-                    // Actual require
-                    try {
-                        namespace[requireObject] = require(bindingPath);
-                    } catch (e) {
-                        //We only have the wrong architecture for this release
-                        if (-1 !== e.message.indexOf("ELF")) {
-                            cb("Impossible to require binding '" + bindingPath + "': " + e);
-                        } else {
-                            return cb(e);
+    /**
+     * Load a module
+     * @public
+     * @param {string} name - The module name
+     * @throw {Error} If the module cannot be loaded
+     */
+    module(name) {
+        let loaded = new Set(),
+            modules = [name];
+        try {
+            while (modules.length > 0) {
+                let n = modules.pop(),
+                    mod = require(`${n}/autoload.js`);
+
+                if (mod.hasOwnProperty("namespaces")) {
+                    for (let ns in mod.namespaces) {
+                        this.namespace(ns, mod.namespaces[ns]);
+                    }
+                }
+
+                if (mod.hasOwnProperty("bindings")) {
+                    for (let b in mod.bindings) {
+                        this.binding(b, mod.bindings[b]);
+                    }
+                }
+
+                if (mod.hasOwnProperty("loads")) {
+                    for (let l of mod.loads) {
+                        Autoloader.load(l);
+                    }
+                }
+
+                if (mod.hasOwnProperty("modules")) {
+                    for (let m of mod.modules) {
+                        if (!loaded.has(m)) {
+                            modules.push(m);
+                            loaded.add(m);
                         }
                     }
                 }
             }
-            return cb();
-        },
-        function (err) {
-            return callback && callback(err);
+        } catch (err) {
+            throw new Error(`Autoloader cannot load "${name}" module`, err);
         }
-    );
-};
+    }
+
+    /**
+     * Create a proxy for a namespace
+     * @private
+     * @param  {Namespace} n - The namespace
+     * @return {Namespace}
+     */
+    _createProxy(n) {
+        if (!this._cache.has(n)) {
+            let self = this,
+                proto = Object.getPrototypeOf(n);
+
+            this._cache.set(n, Proxy.create({
+                getOwnPropertyDescriptor() {
+                    return Object.getOwnPropertyDescriptor(n)
+                },
+                getOwnPropertyNames() {
+                    return n.children;
+                },
+                keys() {
+                    return n.children;
+                },
+                hasOwn(key) {
+                    return -1 !== n.children.indexOf(key);
+                },
+                get(receiver, key) {
+                    if (Autoloader.NAMESPACE_ACCESSOR_KEY == key) {
+                        return n;
+                    }
+
+                    let child = n.child(key);
+                    if (!(child instanceof Namespace)) {
+                        return child;
+                    }
+                    return self._createProxy(child);
+                }
+            }, proto));
+        }
+        return this._cache.get(n);
+    }
+}
+
+/**
+ * Provide access to namespace object through proxy
+ * @private
+ * @type {string}
+ */
+Autoloader.NAMESPACE_ACCESSOR_KEY = "__NAMESPACE_ACCESSOR_KEY__";
+
+/**
+ * Whether an autoloader has been registered
+ * @type {boolean}
+ */
+Autoloader._registered = false;
 
 module.exports = Autoloader;
