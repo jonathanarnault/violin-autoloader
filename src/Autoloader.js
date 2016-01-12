@@ -52,11 +52,9 @@ class Autoloader {
             if (stats.isDirectory()) {
                 let files = fs.readdirSync(file);
                 for (let f of files) {
-                    this.load(path.resolve(file, f), callback);
+                    Autoloader.load(path.resolve(file, f), callback);
                 }
-            } else if (!file.endsWith(".js")) { // Only load javascript files
-               return;
-            } else {
+            } else if (file.endsWith(".js")) { // Only load javascript files
                 let r = require(file);
                 callback && callback(r);
            }
