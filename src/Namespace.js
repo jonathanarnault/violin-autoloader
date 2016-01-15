@@ -21,8 +21,9 @@ class Namespace {
 
     /**
      * Create a new Namespace
-     * @param  {string} name - The namespace name
-     * @param  {Namespace} parent - The namespace parent, can be null
+     * @param {string} name - The namespace name
+     * @param {Namespace=} parent - The optional namespace parent, can be null
+     * @param {string=} directory - The optional path to the associated directory, can be null
      */
     constructor(name, parent, directory) {
 
@@ -54,6 +55,18 @@ class Namespace {
          * @type {Map<string, Namespace|Function>}
          */
         this._children = new Map();
+    }
+
+    /**
+     * Returns the full name of the namespace (including parents one).
+     * @public
+     * @return {string}
+     */
+    get fullname() {
+        if(null !== this._parent) {
+            return this._parent.fullname + "." + this._name;
+        }
+        return this._name;
     }
 
     /**
