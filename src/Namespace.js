@@ -57,6 +57,18 @@ class Namespace {
     }
 
     /**
+     * Returns the full name of the namespace (including parents one).
+     * @public
+     * @return {string}
+     */
+    get fullname() {
+        if(null !== this._parent) {
+            return this._parent.fullname + "." + this._name;
+        }
+        return this._name;
+    }
+
+    /**
      * Get namespace children
      * @public
      * @return {string[]}
