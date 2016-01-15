@@ -52,11 +52,9 @@ class Autoloader {
             if (stats.isDirectory()) {
                 let files = fs.readdirSync(file);
                 for (let f of files) {
-                    this.load(path.resolve(file, f), callback);
+                    Autoloader.load(path.resolve(file, f), callback);
                 }
-            } else if (!file.endsWith(".js")) { // Only load javascript files
-               return;
-            } else {
+            } else if (file.endsWith(".js")) { // Only load javascript files
                 let r = require(file);
                 callback && callback(r);
            }
@@ -112,20 +110,26 @@ class Autoloader {
         let namespaces = namespace.split("."),
             ns;
 
-        for (let i = 0; i < namespaces.length; i++) {
-            if (0 === i) { // Root namespace
-                if (this._namespaces.has(namespaces[0])) {
-                    ns = this._namespaces.get(namespaces[0]);
-                } else {
-                    ns = new Namespace(namespaces[0], null, null);
-                    this._namespaces.set(namespaces[0], ns);
-                }
-            } else { // Child namespace
-                try {
-                    ns = ns.child(namespaces[i]);
-                } catch (err) {
-                    ns = new Namespace(namespaces[i], ns, null);
-                }
+        // Root namespace
+        if (this._namespaces.has(namespaces[0])) {
+            ns = this._namespaces.get(namespaces[0]);
+        } else {
+            ns = new Namespace(namespaces[0], null, null);
+            this._namespaces.set(namespaces[0], ns);
+        }
+
+        if (namespaces.length === 1) {
+            try {
+                ns.directory = directory;
+            } catch (err) {}
+        }
+
+        // Children namespaces
+        for (let i = 1; i < namespaces.length; ++i) {
+            try {
+                ns = ns.child(namespaces[i]);
+            } catch (err) {
+                ns = new Namespace(namespaces[i], ns, null);
             }
             if ((namespaces.length - 1) === i) {
                 try {
