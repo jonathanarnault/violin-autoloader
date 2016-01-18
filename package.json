@@ -1,6 +1,6 @@
 {
   "name": "violin-autoloader",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Simple class autoloader for Node.js",
   "repository": {
     "type": "git",
@@ -16,7 +16,7 @@
   "devDependencies": {
     "mocha": "~2.3.0",
     "nan": "^2.1.0",
-    "should": "~8.0.0",
+    "should": "~8.1.0",
     "should-sinon": "0.0.3",
     "sinon": "^1.17.2"
   },

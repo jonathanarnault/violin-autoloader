@@ -6,7 +6,7 @@ Simple class autoloader for Node.Js
 
 `npm install violin-autoloader`
 
-Will install the latest version of violin-autoloader (currently 1.0.0)
+Will install the latest version of violin-autoloader (currently 1.0.2)
 
 ## Documentation
 

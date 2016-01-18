@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
  */
 
-var path = require("path").posix,
+var path = require("path"),
     fs = require("fs");
 
 /**
