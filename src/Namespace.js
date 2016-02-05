@@ -133,7 +133,11 @@ class Namespace {
                     return new Namespace(child, this, file);
                 }
 
-            } catch (err) {}
+            } catch (err) {
+                if("ENOENT" !== err.code) {
+                    console.error(err);
+                }
+            }
 
             // Load class if exists
             try {
@@ -149,7 +153,9 @@ class Namespace {
                     return this._children.get(child);
                 }
 
-            } catch (err) {}
+            } catch (err) {
+                console.error(err);
+            }
         }
         return this._children.get(child);
     }
