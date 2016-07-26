@@ -238,9 +238,9 @@ class Autoloader {
             let self = this,
                 proto = Object.getPrototypeOf(n);
 
-            this._cache.set(n, Proxy.create({
-                getOwnPropertyDescriptor() {
-                    return Object.getOwnPropertyDescriptor(n)
+            this._cache.set(n, new Proxy(proto, {
+                getOwnPropertyDescriptors() {
+                    return Object.getOwnPropertyDescriptors(n)
                 },
                 getOwnPropertyNames() {
                     return n.children;
@@ -262,7 +262,7 @@ class Autoloader {
                     }
                     return self._createProxy(child);
                 }
-            }, proto));
+            }));
         }
         return this._cache.get(n);
     }
