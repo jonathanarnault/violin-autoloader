@@ -1,6 +1,6 @@
 {
   "name": "violin-autoloader",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Simple class autoloader for Node.js",
   "repository": {
     "type": "git",
@@ -9,18 +9,18 @@
   "main": "src/Autoloader.js",
   "scripts": {
     "test": "mocha --harmony-proxies -r assert -r should -r should-sinon",
-    "compile-tests": "cd ./test/use-case/binding; node-gyp clean configure build; cd ../../../node_modules/autoloader-test-1/binding; node-gyp clean configure build"
+    "compile-tests": "cd ./test/use-case/binding; node-gyp rebuild; cd ../../../node_modules/autoloader-test-1/binding; node-gyp rebuild"
   },
   "author": "Jonathan ARNAULT <contact@jonathanarnault.com>",
   "license": "MIT",
   "devDependencies": {
-    "mocha": "~2.3.0",
-    "nan": "^2.1.0",
-    "should": "~8.1.0",
-    "should-sinon": "0.0.3",
-    "sinon": "^1.17.2"
+    "mocha": "~2.5.3",
+    "nan": "~2.4.0",
+    "should": "~10.0.0",
+    "should-sinon": "^0.0.5",
+    "sinon": "~1.17.2"
   },
   "engines": {
-    "node": ">=4.0.0"
+    "node": ">=6.0.0"
   }
 }
